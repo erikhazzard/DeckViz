@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+    <link href='/static/css/style-all.css' rel='stylesheet' type='text/css'>
+    <link href='/static/css/qunit.css' rel='stylesheet' type='text/css' />
+    <title>Unit Tests</title>
+</head>
+<body>
+
+<div id='tests_wrapper'>
+    <!-- QUnit Test Boilerplate -->
+    <h1 id="qunit-header">QUnit Test Suite</h1>  
+    <h2 id="qunit-banner"></h2>  
+    <div id="qunit-testrunner-toolbar"></div>  
+    <h2 id="qunit-userAgent"></h2>  
+    <ol id="qunit-tests"></ol> 
+
+    <!-- JSLitmus Tests -->
+    <br /><br />
+    <h1 id="qunit-header"><a href="#">Speed Tests</a></h1>
+    <div id="jslitmus_container" style="margin: 20px 10px;"></div>
+    </div>
+</div>
+<!-- ======================================================================
+
+    SCRIPTS
+
+    ======================================================================= -->
+<!-- Third party -->
+<script src='/static/libs/all3rdjs.min.js'></script>
+
+
+<!-- ======================================================================
+    Test script
+    ======================================================================= -->
+<!-- Test libs -->
+<script src="/static/libs/qunit.js"></script>
+<script src="/static/libs/js_litmus.js"></script>
+<script src="/static/libs/sinon-1.3.2.js"></script>
+<script src="/static/libs/sinon-qunit-1.0.0.js"></script>
+
+<!-- ======================================================================
+    Our scripts
+    ======================================================================= -->
+<script src='/static/js/build/deckviz.min.js'></script>
+<script src='/static/js/tests/tests.js'></script>
+</body>
+</html>

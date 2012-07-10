@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+    <title>Deck Viz</title>
+    <!-- CSS -->
+    <link href='/static/css/style-all.css' rel='stylesheet' type='text/css'>
+</head>
+<body>
+<!-- ======================================================================
+
+    LAYOUT
+
+    ======================================================================= -->
+<div id='site-wrapper'>
+    <div id='deck-wrapper'>
+        <textarea id='deck'></textarea>
+    </div>
+    <div id='svg-wrapper'>
+        <svg id='svg-el' width=1300 height=400></svg>
+    </div>
+</div>
+
+<!-- ======================================================================
+
+    TEMPLATES
+
+    ======================================================================= -->
+
+<!-- ======================================================================
+
+    SCRIPTS
+
+    ======================================================================= -->
+<!-- Third party -->
+<script src='/static/libs/all3rdjs.min.js'></script>
+
+<!-- ======================================================================
+    Our scripts
+    ======================================================================= -->
+<script src='/static/js/build/deckviz.min.js'></script>
+<script>
+//TODO: use different scripts based on environment. In testing, we want to call 
+//  this manually so we can run unit tests
+$(document).ready(function(){
+    //DECKVIZ.Charts.Cards();
+    DECKVIZ.Deck.create();
+});
+</script>
+</body>
+</html>
