@@ -5,8 +5,8 @@
 # Contains the view, model, and collection class definitions for the deck 
 #
 # ===========================================================================
-#Get deck from text input
 DECKVIZ.Deck.getDeckFromInput = (params) =>
+    #Get deck from text input
     #Parses a decklist and returns a deck object with Key: Value of CardName:
     #   CardAmount
     #Parameters (either are optional, but at least one must be passed):
@@ -26,7 +26,6 @@ DECKVIZ.Deck.getDeckFromInput = (params) =>
         deckText = params.deckText
 
     #Split the lines
-    console.log(deckText)
     deckArray = deckText.split('\n')
 
     #Setup deck we'll return
@@ -49,18 +48,56 @@ DECKVIZ.Deck.getDeckFromInput = (params) =>
 
     return deck
 
-#Setup deck to change on keyup
-$('#deck').on('keyup', (e)=>
-    DECKVIZ.Deck.create(DECKVIZ.Deck.getDeckFromInput({deckText: $('#deck').val()}))
-)
+DECKVIZ.Deck.getCardTypes = (params) =>
+    #Get card types (instants, creatures, lands, etc.) from a passed in deck
+    #Parses a decklist and returns a deck object with Key: Value of CardName:
+    #   CardAmount
+    #Parameters 
+    #   deck: deck object containing an array of cards
+    #Keep track of types
+    cardTypes = {}
+    params = params || {}
+    if not params.deck
+        return false
+
+    #Keep track of how many times a card shows up
+    for card in params.deck
+        if cardTypes[card.type]?
+            cardTypes[card.type] += 1
+        else
+            cardTypes[card.type] = 0
+
+    #Return it
+    return cardTypes
+
 # ===========================================================================
 #
 # Create deck
 #
 # ===========================================================================
+#Setup deck to change on keyup
+$('#deck').on('keyup', (e)=>
+    DECKVIZ.Deck.create(DECKVIZ.Deck.getDeckFromInput({deckText: $('#deck').val()}))
+)
 DECKVIZ.Deck.create = (deck)=>
     #Takes in a deck parameter, which is an array of cards
     if not deck
+        #Another test
+        deck = {
+            "Mutilate": 4,
+            "Liliana's Shade": 3,
+            "Murder": 3,
+            "Killing Wave": 4,
+            "Demonic Taskmaster": 3,
+            "Swamp": 23,
+            "Nefarox, Overlord of Grixis": 2,
+            "Homicidal Seclusion": 2,
+            "Duress": 4,
+            "Appetite for Brains": 3,
+            "Death Wind": 4,
+            "Shimian Specter": 2,
+            "Essence Harvest": 3
+        }
         #Sample deck
         deck = {
             "Tamiyo, the Moon Sage": 2,
@@ -83,23 +120,6 @@ DECKVIZ.Deck.create = (deck)=>
             "Swamp": 1,
             "Island": 3,
             "Plains": 5
-        }
-
-        #Another test
-        deck = {
-            "Mutilate": 4,
-            "Liliana's Shade": 3,
-            "Murder": 3,
-            "Killing Wave": 4,
-            "Demonic Taskmaster": 3,
-            "Swamp": 23,
-            "Nefarox, Overlord of Grixis": 2,
-            "Homicidal Seclusion": 2,
-            "Duress": 4,
-            "Appetite for Brains": 3,
-            "Death Wind": 4,
-            "Shimian Specter": 2,
-            "Essence Harvest": 3
         }
 
 
@@ -129,19 +149,36 @@ DECKVIZ.Deck.create = (deck)=>
                 for i in [0..deck[card.name]-1]
                     finalDeck.push(card)
 
+            cardTypes = DECKVIZ.Deck.getCardTypes({deck: finalDeck})
+            console.log(JSON.stringify(cardTypes))
+
             #Setup deck with proper number of cards
             DECKVIZ.Deck.manaCurve(finalDeck, deck)
     })
 
 #========================================
-#Create deck viz
+#
+#Mana Curve
+#
 #========================================
-DECKVIZ.Deck.manaCurve= (deck, originalDeck)=>
-    $('#svg-el').empty()
+DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
+    svgId = '#svg-el-deck-mana'
+
+    $(svgId).empty()
 
     #get width and height
-    width = $('#svg-el').attr('width')
-    height = $('#svg-el').attr('height')
+    width = $(svgId).attr('width')
+    height = $(svgId).attr('height')
+
+    #chart config
+    maxManaCost = 10
+
+    #Padding for graph
+    padding = [
+        10,
+        0,
+        0,
+        50]
     
     #Store reference to convertedManaCost function which calculates the
     #   converted mana cost
@@ -170,64 +207,145 @@ DECKVIZ.Deck.manaCurve= (deck, originalDeck)=>
 
     #turn manaCostLookup into array
     manaCostArray = []
+    mostNumOfCards = 0
     #Setup array to have [cost, number of cards]
     for cost, num of manaCostLookup
         costInt = parseInt(cost, 10)
         if costInt
             manaCostArray.push([costInt, num])
+            if costInt > mostNumOfCards
+                mostNumOfCards = costInt
 
     #Create a bar chart for mana curve
     xScale = d3.scale.linear()
         #Goes from 0 to the highest mana cost
-        .domain([0, 9])
-        .range([0, width])
-
+        .domain([0, maxManaCost])
+        .range([padding[3], width])
 
     originalHeight = height
     height = height - 100
 
+    #Highest number mana will go to
+    highestCardCount = 20
+    if mostNumOfCards > 20
+        highestCardCount = mostNumOfCards * 1.2
+
     yScale = d3.scale.linear()
         #Goes from 0 to the highest occurence of cards with that mana cost
-        .domain([0, 60])
-        .rangeRound([0, height])
+        .domain([0, highestCardCount])
+        .rangeRound([padding[0], height])
 
-    chart = d3.select('#svg-el')
+    svgEl = d3.select(svgId)
+    chart = svgEl
         .selectAll("rect")
         .data(manaCostArray)
         .enter()
         
+    console.log(manaCostArray)
+    #------------------------------------
+    #Add the bars for the mana curve
+    #------------------------------------
     chart.append("rect")
         .attr("x", (d, i) =>
             return xScale(d[0]) - .5
         )
-        .attr("y", (d) =>
-            cost = calcCC(d.manacost)
-            return height - yScale(d[1]) - .5
-        )
         .attr("width", (d,i)=>
-            return width/(manaCostArray.length*2)
+            return width/(maxManaCost+2)
         )
-        .attr("height", (d)=>
-            cost = calcCC(d.manacost)
-            return yScale(d[1]) - .5
-        ).style("fill", (d,i) =>
+        .style("fill", (d,i) =>
             return DECKVIZ.util.colorScale['X']
         )
-
-    chart.append("text")
-        .attr("x", (d,i)=>
-            return (xScale(d[0]) - .5) + (width/(manaCostArray.length*2)/2)
-        ).attr("y", height + 20)
-        .text((d,i)=>
-            return d[0]
+        .attr("y", (d) =>
+            return height
         )
+        .attr("height", (d)=>
+            return 0
+        )
+        .transition()
+            .attr('height', (d)=>
+                return yScale(d[1]) - .5
+            )
+            .attr('y', (d)=>
+                return height - yScale(d[1]) - .5
+            )
 
+    chart.append('text')
+        .text((d,i)=>
+            return d[1]
+        )
+        .attr("x", (d,i)=>
+            return (xScale(d[0]) - 5) + ((width/(maxManaCost+2))/2)
+        ).attr("y", height - 15)
+        .style('fill', '#ffffff')
+        .style('text-shadow', '0 -1px 2px #000000')
+
+    #------------------------------------
+    #Add bottom labels
+    #------------------------------------
+    svgEl.selectAll("text.label")
+        .data(num for num in [0..maxManaCost])
+        .enter()
+        .append('svg:text')
+            .attr('class', 'label')
+            .attr("x", (d,i)=>
+                return (xScale(d) - .5) + ((width/(maxManaCost+2))/2)
+            ).attr("y", height + 20)
+            .text((d,i)=>
+                return d
+            )
+
+    #------------------------------------
     #bottom x axis
-    d3.select('#svg-el').append("line")
-        .attr("x1", 0)
+    #------------------------------------
+    svgEl.append("line")
+        .attr("x1", padding[3])
         .attr("x2", width)
         .attr("y1", height - .5)
         .attr("y2", height - .5)
         .style("stroke", "#000")
 
+    #------------------------------------
+    #left y axis
+    #------------------------------------
+    tickYScale= d3.scale.linear()
+        #Goes from 0 to the highest occurence of cards with that mana cost
+        .domain([highestCardCount,0])
+        .rangeRound([padding[0], height])
+
+    yAxis = d3.svg.axis()
+        .scale(tickYScale)
+        .ticks(9)
+        .orient("left")
+
+    yAxisGroup = svgEl.append("g")
+        .attr("transform", "translate(" + [padding[3], 0] + ")")
+        .classed("yaxis", true)
+        .call(yAxis)
+    yAxisGroup.selectAll("path")
+        .style("fill", "none")
+        .style("stroke", "#000")
+    yAxisGroup.selectAll("line")
+        .style("fill", "none")
+        .style("stroke", "#000")
+
     return true
+
+#========================================
+#
+#Card Type Breakdown
+#
+#========================================
+DECKVIZ.Deck.deckPie= (deck, originalDeck)=>
+    svgId = '#svg-el-deck-pie'
+
+    $(svgId).empty()
+
+    #get width and height
+    width = $(svgId).attr('width')
+    height = $(svgId).attr('height')
+
+    svgEl = d3.select(svgId)
+    pie = d3.layout.pie
+
+    #Loop through data to get creature types
+

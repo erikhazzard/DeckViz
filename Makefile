@@ -12,16 +12,16 @@ LESS_FILES = static/less/less-variables.less \
 			 static/less/responsive-800.less \
 			 static/less/responsive-600.less
 
-THIRD_PARTY = static/libs/underscore.js \
-		static/libs/json2.js \
-		static/libs/jquery.js \
-		static/libs/backbone.js \
-		static/libs/d3.js \
-		static/libs/bootstrap-transition.js \
-		static/libs/bootstrap-tooltip.js \
-		static/libs/bootstrap-popover.js \
-		static/libs/bootstrap-modal.js \
-		static/libs/jquery-ui.min.js \
+THIRD_PARTY = static/lib/underscore.js \
+		static/lib/json2.js \
+		static/lib/jquery.js \
+		static/lib/backbone.js \
+		static/lib/d3.js \
+		static/lib/bootstrap-transition.js \
+		static/lib/bootstrap-tooltip.js \
+		static/lib/bootstrap-popover.js \
+		static/lib/bootstrap-modal.js \
+		static/lib/jquery-ui.min.js \
 
 JS_COMPILER = ./node_modules/uglify-js/bin/uglifyjs
 CS_COMPILER = ./node_modules/coffee-script/bin/coffee -c -b
@@ -71,9 +71,9 @@ mongo:
 
 third:
 	@echo "Compiling Third Party JS"
-	@cat $(THIRD_PARTY) > static/libs/all3rdjs.js
-	@uglifyjs -nc static/libs/all3rdjs.js > static/libs/all3rdjs.min.js
-	@rm static/libs/all3rdjs.js
+	@cat $(THIRD_PARTY) > static/lib/all3rdjs.js
+	@uglifyjs -nc static/lib/all3rdjs.js > static/lib/all3rdjs.min.js
+	@rm static/lib/all3rdjs.js
 
 watch:
 	echo "Watching less files..."; \

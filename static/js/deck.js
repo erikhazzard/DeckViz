@@ -6,7 +6,6 @@ DECKVIZ.Deck.getDeckFromInput = function(params) {
   params = params || {};
   if (params.el) deckText = el.val();
   if (params.deckText) deckText = params.deckText;
-  console.log(deckText);
   deckArray = deckText.split('\n');
   deck = {};
   for (_i = 0, _len = deckArray.length; _i < _len; _i++) {
@@ -18,6 +17,23 @@ DECKVIZ.Deck.getDeckFromInput = function(params) {
   return deck;
 };
 
+DECKVIZ.Deck.getCardTypes = function(params) {
+  var card, cardTypes, _i, _len, _ref;
+  cardTypes = {};
+  params = params || {};
+  if (!params.deck) return false;
+  _ref = params.deck;
+  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+    card = _ref[_i];
+    if (cardTypes[card.type] != null) {
+      cardTypes[card.type] += 1;
+    } else {
+      cardTypes[card.type] = 0;
+    }
+  }
+  return cardTypes;
+};
+
 $('#deck').on('keyup', function(e) {
   return DECKVIZ.Deck.create(DECKVIZ.Deck.getDeckFromInput({
     deckText: $('#deck').val()
@@ -27,6 +43,21 @@ $('#deck').on('keyup', function(e) {
 DECKVIZ.Deck.create = function(deck) {
   var cardName, finalDeck, num, url, urlArray;
   if (!deck) {
+    deck = {
+      "Mutilate": 4,
+      "Liliana's Shade": 3,
+      "Murder": 3,
+      "Killing Wave": 4,
+      "Demonic Taskmaster": 3,
+      "Swamp": 23,
+      "Nefarox, Overlord of Grixis": 2,
+      "Homicidal Seclusion": 2,
+      "Duress": 4,
+      "Appetite for Brains": 3,
+      "Death Wind": 4,
+      "Shimian Specter": 2,
+      "Essence Harvest": 3
+    };
     deck = {
       "Tamiyo, the Moon Sage": 2,
       "Entreat the Angels": 3,
@@ -49,21 +80,6 @@ DECKVIZ.Deck.create = function(deck) {
       "Island": 3,
       "Plains": 5
     };
-    deck = {
-      "Mutilate": 4,
-      "Liliana's Shade": 3,
-      "Murder": 3,
-      "Killing Wave": 4,
-      "Demonic Taskmaster": 3,
-      "Swamp": 23,
-      "Nefarox, Overlord of Grixis": 2,
-      "Homicidal Seclusion": 2,
-      "Duress": 4,
-      "Appetite for Brains": 3,
-      "Death Wind": 4,
-      "Shimian Specter": 2,
-      "Essence Harvest": 3
-    };
   }
   urlArray = [];
   for (cardName in deck) {
@@ -75,7 +91,7 @@ DECKVIZ.Deck.create = function(deck) {
   return $.ajax({
     url: url,
     success: function(res) {
-      var card, i, _i, _len, _ref, _ref2;
+      var card, cardTypes, i, _i, _len, _ref, _ref2;
       _ref = res.cards;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         card = _ref[_i];
@@ -83,16 +99,23 @@ DECKVIZ.Deck.create = function(deck) {
           finalDeck.push(card);
         }
       }
+      cardTypes = DECKVIZ.Deck.getCardTypes({
+        deck: finalDeck
+      });
+      console.log(JSON.stringify(cardTypes));
       return DECKVIZ.Deck.manaCurve(finalDeck, deck);
     }
   });
 };
 
 DECKVIZ.Deck.manaCurve = function(deck, originalDeck) {
-  var calcCC, card, chart, completeDeck, cost, costInt, height, manaCostArray, manaCostLookup, num, originalHeight, tmpDeck, width, xScale, yScale, _i, _len;
-  $('#svg-el').empty();
-  width = $('#svg-el').attr('width');
-  height = $('#svg-el').attr('height');
+  var calcCC, card, chart, completeDeck, cost, costInt, height, highestCardCount, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, originalHeight, padding, svgEl, svgId, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+  svgId = '#svg-el-deck-mana';
+  $(svgId).empty();
+  width = $(svgId).attr('width');
+  height = $(svgId).attr('height');
+  maxManaCost = 10;
+  padding = [10, 0, 0, 50];
   calcCC = DECKVIZ.util.convertedManaCost;
   manaCostLookup = {};
   tmpDeck = [];
@@ -108,34 +131,71 @@ DECKVIZ.Deck.manaCurve = function(deck, originalDeck) {
   completeDeck = _.clone(deck);
   deck = tmpDeck;
   manaCostArray = [];
+  mostNumOfCards = 0;
   for (cost in manaCostLookup) {
     num = manaCostLookup[cost];
     costInt = parseInt(cost, 10);
-    if (costInt) manaCostArray.push([costInt, num]);
+    if (costInt) {
+      manaCostArray.push([costInt, num]);
+      if (costInt > mostNumOfCards) mostNumOfCards = costInt;
+    }
   }
-  xScale = d3.scale.linear().domain([0, 9]).range([0, width]);
+  xScale = d3.scale.linear().domain([0, maxManaCost]).range([padding[3], width]);
   originalHeight = height;
   height = height - 100;
-  yScale = d3.scale.linear().domain([0, 60]).rangeRound([0, height]);
-  chart = d3.select('#svg-el').selectAll("rect").data(manaCostArray).enter();
+  highestCardCount = 20;
+  if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
+  yScale = d3.scale.linear().domain([0, highestCardCount]).rangeRound([padding[0], height]);
+  svgEl = d3.select(svgId);
+  chart = svgEl.selectAll("rect").data(manaCostArray).enter();
+  console.log(manaCostArray);
   chart.append("rect").attr("x", function(d, i) {
     return xScale(d[0]) - .5;
-  }).attr("y", function(d) {
-    cost = calcCC(d.manacost);
-    return height - yScale(d[1]) - .5;
   }).attr("width", function(d, i) {
-    return width / (manaCostArray.length * 2);
-  }).attr("height", function(d) {
-    cost = calcCC(d.manacost);
-    return yScale(d[1]) - .5;
+    return width / (maxManaCost + 2);
   }).style("fill", function(d, i) {
     return DECKVIZ.util.colorScale['X'];
+  }).attr("y", function(d) {
+    return height;
+  }).attr("height", function(d) {
+    return 0;
+  }).transition().attr('height', function(d) {
+    return yScale(d[1]) - .5;
+  }).attr('y', function(d) {
+    return height - yScale(d[1]) - .5;
   });
-  chart.append("text").attr("x", function(d, i) {
-    return (xScale(d[0]) - .5) + (width / (manaCostArray.length * 2) / 2);
+  chart.append('text').text(function(d, i) {
+    return d[1];
+  }).attr("x", function(d, i) {
+    return (xScale(d[0]) - 5) + ((width / (maxManaCost + 2)) / 2);
+  }).attr("y", height - 15).style('fill', '#ffffff').style('text-shadow', '0 -1px 2px #000000');
+  svgEl.selectAll("text.label").data((function() {
+    var _results;
+    _results = [];
+    for (num = 0; 0 <= maxManaCost ? num <= maxManaCost : num >= maxManaCost; 0 <= maxManaCost ? num++ : num--) {
+      _results.push(num);
+    }
+    return _results;
+  })()).enter().append('svg:text').attr('class', 'label').attr("x", function(d, i) {
+    return (xScale(d) - .5) + ((width / (maxManaCost + 2)) / 2);
   }).attr("y", height + 20).text(function(d, i) {
-    return d[0];
+    return d;
   });
-  d3.select('#svg-el').append("line").attr("x1", 0).attr("x2", width).attr("y1", height - .5).attr("y2", height - .5).style("stroke", "#000");
+  svgEl.append("line").attr("x1", padding[3]).attr("x2", width).attr("y1", height - .5).attr("y2", height - .5).style("stroke", "#000");
+  tickYScale = d3.scale.linear().domain([highestCardCount, 0]).rangeRound([padding[0], height]);
+  yAxis = d3.svg.axis().scale(tickYScale).ticks(9).orient("left");
+  yAxisGroup = svgEl.append("g").attr("transform", "translate(" + [padding[3], 0] + ")").classed("yaxis", true).call(yAxis);
+  yAxisGroup.selectAll("path").style("fill", "none").style("stroke", "#000");
+  yAxisGroup.selectAll("line").style("fill", "none").style("stroke", "#000");
   return true;
+};
+
+DECKVIZ.Deck.deckPie = function(deck, originalDeck) {
+  var height, pie, svgEl, svgId, width;
+  svgId = '#svg-el-deck-pie';
+  $(svgId).empty();
+  width = $(svgId).attr('width');
+  height = $(svgId).attr('height');
+  svgEl = d3.select(svgId);
+  return pie = d3.layout.pie;
 };
