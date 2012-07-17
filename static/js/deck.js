@@ -40,46 +40,14 @@ $('#deck').on('keyup', function(e) {
   }));
 });
 
+$('#deck').val('2 Tamiyo, the Moon Sage\n3 Entreat the Angels\n4 Terminus\n4 Lingering Souls\n1 Isolated Chapel\n1 Spellskite\n3 Dismember\n4 Pristine Talisman\n1 White Sun\'s Zenith\n4 Seachrome Coast\n3 Gideon Jura\n2 Day of Judgment\n4 Glacial Fortress\n4 Drowned Catacomb\n3 Oblivion Ring\n4 Think Twice\n4 Ghost Quarter\n1 Swamp\n3 Island\n5 Plains');
+
 DECKVIZ.Deck.create = function(deck) {
   var cardName, finalDeck, num, url, urlArray;
   if (!deck) {
-    deck = {
-      "Mutilate": 4,
-      "Liliana's Shade": 3,
-      "Murder": 3,
-      "Killing Wave": 4,
-      "Demonic Taskmaster": 3,
-      "Swamp": 23,
-      "Nefarox, Overlord of Grixis": 2,
-      "Homicidal Seclusion": 2,
-      "Duress": 4,
-      "Appetite for Brains": 3,
-      "Death Wind": 4,
-      "Shimian Specter": 2,
-      "Essence Harvest": 3
-    };
-    deck = {
-      "Tamiyo, the Moon Sage": 2,
-      "Entreat the Angels": 3,
-      "Terminus": 4,
-      "Lingering Souls": 4,
-      "Isolated Chapel": 1,
-      "Spellskite": 1,
-      "Dismember": 3,
-      "Pristine Talisman": 4,
-      "White Sun's Zenith": 1,
-      "Seachrome Coast": 4,
-      "Gideon Jura": 3,
-      "Day of Judgment": 2,
-      "Glacial Fortress": 4,
-      "Drowned Catacomb": 4,
-      "Oblivion Ring": 3,
-      "Think Twice": 4,
-      "Ghost Quarter": 4,
-      "Swamp": 1,
-      "Island": 3,
-      "Plains": 5
-    };
+    deck = DECKVIZ.Deck.getDeckFromInput({
+      deckText: $('#deck').val()
+    });
   }
   urlArray = [];
   for (cardName in deck) {
@@ -109,7 +77,7 @@ DECKVIZ.Deck.create = function(deck) {
 };
 
 DECKVIZ.Deck.manaCurve = function(deck, originalDeck) {
-  var calcCC, card, chart, completeDeck, cost, costInt, height, highestCardCount, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, originalHeight, padding, svgEl, svgId, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+  var calcCC, card, chart, completeDeck, cost, height, highestCardCount, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, originalHeight, padding, svgEl, svgId, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
   svgId = '#svg-el-deck-mana';
   $(svgId).empty();
   width = $(svgId).attr('width');
@@ -134,12 +102,12 @@ DECKVIZ.Deck.manaCurve = function(deck, originalDeck) {
   mostNumOfCards = 0;
   for (cost in manaCostLookup) {
     num = manaCostLookup[cost];
-    costInt = parseInt(cost, 10);
-    if (costInt) {
-      manaCostArray.push([costInt, num]);
-      if (costInt > mostNumOfCards) mostNumOfCards = costInt;
+    if ((cost != null) && parseInt(cost)) {
+      manaCostArray.push([cost, num]);
+      if (num > mostNumOfCards) mostNumOfCards = num;
     }
   }
+  console.log(mostNumOfCards);
   xScale = d3.scale.linear().domain([0, maxManaCost]).range([padding[3], width]);
   originalHeight = height;
   height = height - 100;

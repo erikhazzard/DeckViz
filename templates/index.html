@@ -14,12 +14,31 @@
 
     ======================================================================= -->
 <div id='site-wrapper'>
-    <div id='deck-wrapper'>
-        <textarea id='deck'></textarea>
+    <!-- Top Wrapper -->
+    <div id='site-top-wrapper'>
+        DeckViz
     </div>
-    <div id='svg-wrapper' style='margin: 1em;'>
-        <svg id='svg-el-deck-mana' width=1300 height=400></svg>
-        <svg id='svg-el-deck-pie' width=600 height=400></svg>
+    
+
+    <!-- Contains site content -->
+    <div id='site-content-wrapper'>
+        <!-- Left Side -->
+        <div id='site-left-side-wrapper'>
+
+            <!-- Deck -->
+            <div id='deck-wrapper'>
+                <textarea id='deck'></textarea>
+            </div>
+        </div>
+
+
+        <!-- Right Side (visualizations) -->
+        <div id='site-right-side-wrapper'>
+            <div id='svg-wrapper' style='margin: 1em;'>
+                <svg id='svg-el-deck-mana' width=1300 height=400></svg>
+                <svg id='svg-el-deck-pie' width=600 height=400></svg>
+            </div>
+        </div>
     </div>
 </div>
 

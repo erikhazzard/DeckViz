@@ -79,49 +79,36 @@ DECKVIZ.Deck.getCardTypes = (params) =>
 $('#deck').on('keyup', (e)=>
     DECKVIZ.Deck.create(DECKVIZ.Deck.getDeckFromInput({deckText: $('#deck').val()}))
 )
+$('#deck').val('''
+    2 Tamiyo, the Moon Sage
+    3 Entreat the Angels
+    4 Terminus
+    4 Lingering Souls
+    1 Isolated Chapel
+    1 Spellskite
+    3 Dismember
+    4 Pristine Talisman
+    1 White Sun's Zenith
+    4 Seachrome Coast
+    3 Gideon Jura
+    2 Day of Judgment
+    4 Glacial Fortress
+    4 Drowned Catacomb
+    3 Oblivion Ring
+    4 Think Twice
+    4 Ghost Quarter
+    1 Swamp
+    3 Island
+    5 Plains
+''')
+
 DECKVIZ.Deck.create = (deck)=>
     #Takes in a deck parameter, which is an array of cards
     if not deck
-        #Another test
-        deck = {
-            "Mutilate": 4,
-            "Liliana's Shade": 3,
-            "Murder": 3,
-            "Killing Wave": 4,
-            "Demonic Taskmaster": 3,
-            "Swamp": 23,
-            "Nefarox, Overlord of Grixis": 2,
-            "Homicidal Seclusion": 2,
-            "Duress": 4,
-            "Appetite for Brains": 3,
-            "Death Wind": 4,
-            "Shimian Specter": 2,
-            "Essence Harvest": 3
-        }
-        #Sample deck
-        deck = {
-            "Tamiyo, the Moon Sage": 2,
-            "Entreat the Angels": 3,
-            "Terminus": 4,
-            "Lingering Souls": 4,
-            "Isolated Chapel": 1,
-            "Spellskite": 1,
-            "Dismember": 3,
-            "Pristine Talisman": 4,
-            "White Sun's Zenith": 1,
-            "Seachrome Coast": 4,
-            "Gideon Jura": 3,
-            "Day of Judgment": 2,
-            "Glacial Fortress": 4,
-            "Drowned Catacomb": 4,
-            "Oblivion Ring": 3,
-            "Think Twice": 4,
-            "Ghost Quarter": 4,
-            "Swamp": 1,
-            "Island": 3,
-            "Plains": 5
-        }
-
+        #If none specified, create it
+        deck = DECKVIZ.Deck.getDeckFromInput({
+            deckText: $('#deck').val()
+        })
 
     #Construct call to get cards from DB
     #store names of each card, which we'll join by a |
@@ -208,13 +195,14 @@ DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
     #turn manaCostLookup into array
     manaCostArray = []
     mostNumOfCards = 0
+    
     #Setup array to have [cost, number of cards]
+    #Determine the most number of cards and keep reference to it
     for cost, num of manaCostLookup
-        costInt = parseInt(cost, 10)
-        if costInt
-            manaCostArray.push([costInt, num])
-            if costInt > mostNumOfCards
-                mostNumOfCards = costInt
+        if cost? and parseInt(cost)
+            manaCostArray.push([cost, num])
+            if num > mostNumOfCards
+                mostNumOfCards = num
 
     #Create a bar chart for mana curve
     xScale = d3.scale.linear()
@@ -268,7 +256,8 @@ DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
             .attr('y', (d)=>
                 return height - yScale(d[1]) - .5
             )
-
+    
+    #Labels for num of cards
     chart.append('text')
         .text((d,i)=>
             return d[1]

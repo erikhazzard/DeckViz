@@ -7,7 +7,7 @@
  *
  * ======================================================================== */
 /* Google Fonts */
-@import url("http://fonts.googleapis.com/css?family=Comfortaa:400,700|Ubuntu+Mono|Oxygen|Cantarell&.css");
+@import url("http://fonts.googleapis.com/css?family=Ubuntu+Mono|Cantarell&.css");
 /*Font awesome */
 @font-face {
   font-family: 'FontAwesome';
@@ -28,6 +28,59 @@
  * ======================================================================== */
 #site-wrapper {
     .absolute-full-layout;
+}
+
+/* ========================================================================    
+ *
+ * Top header
+ *
+ * ======================================================================== */
+@site-top-wrapper-height: 80px;
+
+#site-top-wrapper {
+    height: @site-top-wrapper-height;
+}
+
+/* ========================================================================    
+ *
+ * Site content wrapper
+ *
+ * ======================================================================== */
+#site-content-wrapper {
+    .absolute-full-layout;
+    top: @site-top-wrapper-height;
+}
+
+/* ========================================================================    
+ *
+ * Left Side 
+ *
+ * ======================================================================== */
+@site-left-side-wrapper-width: 20%;
+#site-left-side-wrapper {
+    .absolute-full-layout;
+    right: auto;
+    width: @site-left-side-wrapper-width;
+}
+/* ========================================================================    
+ * Deck
+ * ======================================================================== */
+#deck {
+    font-size: .9em;
+    min-height: 300px;
+    min-width: 200px;
+}
+
+
+/* ========================================================================    
+ *
+ * Right Side
+ *
+ * ======================================================================== */
+@site-right-side-wrapper-width: 20%;
+#site-right-side-wrapper {
+    .absolute-full-layout;
+    left: @site-left-side-wrapper-width;
 }
 
 /* ========================================================================    
