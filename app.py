@@ -136,7 +136,8 @@ def items(query=None):
         "num_results": num_results
     }
 
-    #Store to cache
+    #Save to cache
+    #TODO: SET TTL
     redisClient.set(cache_key, json.dumps(res))
 
     #Return response
