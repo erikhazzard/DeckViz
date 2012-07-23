@@ -5,6 +5,7 @@
 # ==============================================================================
 import flask
 import pymongo 
+import redis
 import datetime
 import json
 import re
@@ -19,6 +20,8 @@ DB_CONNECTION = pymongo.Connection('localhost', 27017)
 #use the mtg database
 DB = DB_CONNECTION.mtg
 
+redisClient = redis.StrictRedis(host='localhost', port=6379, db=0)
+CACHE_PREFIX = 'mtg-viz:'
 # ==============================================================================
 #
 # Static Endpoints
@@ -99,6 +102,22 @@ def get_items_from_query(query=None):
 def items(query=None):
     '''Gets items from mongo based on query
     '''
+    #Stringify the query to get a cache key
+    cache_key = CACHE_PREFIX + json.dumps(query)
+
+    #------------------------------------
+    #Try to get from cache
+    #------------------------------------
+    cache_res = redisClient.get(cache_key)
+    #If there's something in the cache, return it
+    if cache_res is not None:
+        res = json.loads(cache_res) 
+        #Return the cached response
+        return flask.jsonify(res)
+
+    #------------------------------------
+    #Get cards (not in cache)
+    #------------------------------------
     #Get the items from the database based on the query (if any)
     db_items = get_items_from_query(query)
 
@@ -111,10 +130,16 @@ def items(query=None):
     #Get the total length
     num_results = len(items)
     
+    #Build response
     res = {
         "cards": items, 
         "num_results": num_results
     }
+
+    #Store to cache
+    redisClient.set(cache_key, json.dumps(res))
+
+    #Return response
     return flask.jsonify(res)
 
 
