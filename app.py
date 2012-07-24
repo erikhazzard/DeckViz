@@ -143,7 +143,6 @@ def items(query=None):
     #Return response
     return flask.jsonify(res)
 
-
 # ==============================================================================
 #
 # Run server
