@@ -67,7 +67,7 @@ coffeejs:
 	@echo "${HR}\n"
 
 mongo:
-	@mongoimport -d mtg -c models server/data.json
+	@mongoimport -d mtg -c models server/cards.json
 
 third:
 	@echo "Compiling Third Party JS"
