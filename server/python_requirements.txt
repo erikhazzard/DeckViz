@@ -1,3 +1,6 @@
 Flask==0.8
-pymongo==2.1.1
 xmldict==0.4
+pymongo==2.1.1
+redis==2.6.0
+gevent==0.13.7
+gunicorn==0.14.5
