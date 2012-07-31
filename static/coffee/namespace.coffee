@@ -36,3 +36,5 @@ DECKVIZ = (()=>
     }
 
 )()
+
+window.DECKVIZ = DECKVIZ

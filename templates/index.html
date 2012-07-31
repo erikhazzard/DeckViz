@@ -59,8 +59,19 @@
 <!-- ======================================================================
     Our scripts
     ======================================================================= -->
+
+<script src='/static/js/namespace.js'></script>
+<script src='/static/js/util.js'></script>
+<script src='/static/js/app.js'></script>
+<script src='/static/js/cards.js'></script>
+<script src='/static/js/deck.js'></script>
+
+<!-- PRODUCTION
 <script src='/static/js/build/deckviz.min.js'></script>
+-->
+
 <script>
+
 //TODO: use different scripts based on environment. In testing, we want to call 
 //  this manually so we can run unit tests
 $(document).ready(function(){

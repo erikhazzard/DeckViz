@@ -58,6 +58,7 @@ DECKVIZ.Deck.getCardTypes = (params) =>
     cardTypes = {}
     params = params || {}
     if not params.deck
+        console.log('No deck passed in!')
         return false
 
     #Keep track of how many times a card shows up
@@ -65,7 +66,7 @@ DECKVIZ.Deck.getCardTypes = (params) =>
         if cardTypes[card.type]?
             cardTypes[card.type] += 1
         else
-            cardTypes[card.type] = 0
+            cardTypes[card.type] = 1
 
     #Return it
     return cardTypes
@@ -105,9 +106,14 @@ $('#deck').val('''
 DECKVIZ.Deck.create = (deck)=>
     #Takes in a deck parameter, which is an array of cards
     if not deck
+        deckText = $('#deck').val()
         #If none specified, create it
         deck = DECKVIZ.Deck.getDeckFromInput({
-            deckText: $('#deck').val()
+            deckText: deckText
+        })
+        #Get a copy
+        deckCopy = DECKVIZ.Deck.getDeckFromInput({
+            deckText: deckText
         })
 
     #Construct call to get cards from DB
@@ -129,15 +135,25 @@ DECKVIZ.Deck.create = (deck)=>
         success: (res)=>
             #res is the response from the server, which contains an array 
             #   of cards
+            
             #For each card returned, append it to the finalDeck X times
             #   where X is the number of items in the deck
             for card in res.cards
-                #add the card X times
-                for i in [0..deck[card.name]-1]
-                    finalDeck.push(card)
+                #NOTE: Reprinted cards may come up multiple times in the 
+                #   response, so only add cards which were in the original deck 
+                #   object
+                #
+                #To mitgate this, we'll set the value of the current card to -1
+                #   after we've found it the first time
+                if deck[card.name] > 0
+                    #add the card X times
+                    for i in [0..deck[card.name]-1]
+                        finalDeck.push(card)
+                    #Set the value to -1 so thie card isn't counted again
+                    deck[card.name] = -1
 
+            #Get the card types
             cardTypes = DECKVIZ.Deck.getCardTypes({deck: finalDeck})
-            console.log(JSON.stringify(cardTypes))
 
             #Setup deck with proper number of cards
             DECKVIZ.Deck.manaCurve(finalDeck, deck)
@@ -229,7 +245,6 @@ DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
         .data(manaCostArray)
         .enter()
         
-    console.log(manaCostArray)
     #------------------------------------
     #Add the bars for the mana curve
     #------------------------------------

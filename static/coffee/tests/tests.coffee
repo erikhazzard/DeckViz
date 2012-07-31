@@ -285,4 +285,92 @@ $(document).ready( ()->
         )
 
     )
+
+    #=========================================================================
+    #
+    #getCardTypes
+    #
+    #=========================================================================
+    module('DECK FUNCTIONS: getCardTypes',{
+        #getCardTypes takes in a deck object and returns an object containing
+        #   the number of card types - e.g. {'Instant': 9} if a deck had 9
+        #   instants
+        setup: ()->
+            return @
+
+        teardown: ()->
+            return @
+    })
+    
+    test('getCardTypes(): Returns correct number of types', ()->
+        #Store ref to func
+        func = DECKVIZ.Deck.getCardTypes
+
+        #Make sure it returns false if no deck was passed in
+        equal(func(), false, 'Returns false when no deck is passed in')
+
+        #Test it with a single instant
+        deck = [ {type: 'Instant'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Instant: 1 },
+            'Returns correct number of instants when one is passed in'
+        )
+
+        #Test it with two instants
+        deck = [ {type: 'Instant'}, {type: 'Instant'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Instant: 2 },
+            'Returns correct number of instants when two instants are passed in'
+        )
+
+        #Mix up tests now
+        deck = [ {type: 'Sorcery'}, {type: 'Instant'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Sorcery: 1, Instant: 1 },
+            'Returns correct object when one sorcery and one instant are passed'
+        )
+
+        deck = [ {type: 'Sorcery'}, {type: 'Instant'},
+                {type: 'Sorcery'}, {type: 'Instant'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Sorcery: 2, Instant: 2 },
+            'Returns correct object when two sorcery and two instant are passed'
+        )
+
+        deck = [ {type: 'Sorcery'}, {type: 'Instant'},
+                {type: 'Sorcery'}, {type: 'Instant'},
+                {type: 'Instant'}, {type: 'Sorcery'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Sorcery: 3, Instant: 3 },
+            'Returns correct object when 3 sorcery and 3 instant are passed'
+        )
+
+        deck = [ {type: 'Sorcery'}, {type: 'Instant'},
+                {type: 'Creature'}, {type: 'Instant'},
+                {type: 'Instant'}, {type: 'Sorcery'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Sorcery: 2, Instant: 3, Creature: 1 },
+            'Returns correct object when 2 sorcery and 3 instant and 1 creature are passed'
+        )
+
+        deck = [ {type: 'Sorcery'}, {type: 'Instant'},
+                {type: 'Creature'}, {type: 'Instant'},
+                {type: 'Creature'}, {type: 'Instant'},
+                {type: 'Creature'}, {type: 'Instant'},
+                {type: 'Instant'}, {type: 'Sorcery'} ]
+        deepEqual(
+            func({deck: deck}),
+            { Sorcery: 2, Instant: 5, Creature: 3 },
+            'Returns correct object when 2 sorcery and 5 instant and 3 creature are passed'
+        )
+
+        #TODO: Test creature types
+        
+    )
 )
