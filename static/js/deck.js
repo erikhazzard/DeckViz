@@ -41,12 +41,12 @@
   $('#deck').on('keyup', function(e) {
     return DECKVIZ.Deck.create(DECKVIZ.Deck.getDeckFromInput({
       deckText: $('#deck').val()
-    }));
+    }), true);
   });
 
   $('#deck').val('2 Tamiyo, the Moon Sage\n3 Entreat the Angels\n4 Terminus\n4 Lingering Souls\n1 Isolated Chapel\n1 Spellskite\n3 Dismember\n4 Pristine Talisman\n1 White Sun\'s Zenith\n4 Seachrome Coast\n3 Gideon Jura\n2 Day of Judgment\n4 Glacial Fortress\n4 Drowned Catacomb\n3 Oblivion Ring\n4 Think Twice\n4 Ghost Quarter\n1 Swamp\n3 Island\n5 Plains');
 
-  DECKVIZ.Deck.create = function(deck) {
+  DECKVIZ.Deck.create = function(deck, update) {
     var cardName, deckCopy, deckText, finalDeck, num, url, urlArray;
     if (!deck) {
       deckText = $('#deck').val();
@@ -81,7 +81,11 @@
         cardTypes = DECKVIZ.Deck.getCardTypes({
           deck: finalDeck
         });
-        return DECKVIZ.Deck.manaCurve(finalDeck, deck);
+        if (update === true) {
+          return DECKVIZ.Deck.updateManaCurve(finalDeck, deck);
+        } else {
+          return DECKVIZ.Deck.manaCurve(finalDeck, deck);
+        }
       }
     });
   };
@@ -164,6 +168,56 @@
     yAxisGroup.selectAll("path").style("fill", "none").style("stroke", "#000");
     yAxisGroup.selectAll("line").style("fill", "none").style("stroke", "#000");
     return true;
+  };
+
+  DECKVIZ.Deck.updateManaCurve = function(deck, originalDeck) {
+    var calcCC, card, chart, completeDeck, cost, height, highestCardCount, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, originalHeight, padding, svgEl, svgId, tmpDeck, width, xScale, yScale, _i, _len;
+    svgId = '#svg-el-deck-mana';
+    width = $(svgId).attr('width');
+    height = $(svgId).attr('height');
+    maxManaCost = 10;
+    padding = [10, 0, 0, 50];
+    calcCC = DECKVIZ.util.convertedManaCost;
+    manaCostLookup = {};
+    tmpDeck = [];
+    for (_i = 0, _len = deck.length; _i < _len; _i++) {
+      card = deck[_i];
+      if (manaCostLookup[calcCC(card.manacost)]) {
+        manaCostLookup[calcCC(card.manacost)] += 1;
+      } else {
+        manaCostLookup[calcCC(card.manacost)] = 1;
+      }
+      if (card.manacost) tmpDeck.push(card);
+    }
+    completeDeck = _.clone(deck);
+    deck = tmpDeck;
+    manaCostArray = [];
+    mostNumOfCards = 0;
+    for (cost in manaCostLookup) {
+      num = manaCostLookup[cost];
+      if ((cost != null) && parseInt(cost)) {
+        manaCostArray.push([cost, num]);
+        if (num > mostNumOfCards) mostNumOfCards = num;
+      }
+    }
+    xScale = d3.scale.linear().domain([0, maxManaCost]).range([padding[3], width]);
+    originalHeight = height;
+    height = height - 100;
+    highestCardCount = 20;
+    if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
+    yScale = d3.scale.linear().domain([0, highestCardCount]).rangeRound([padding[0], height]);
+    svgEl = d3.select(svgId);
+    return chart = svgEl.selectAll("rect").data(manaCostArray).transition().attr("x", function(d, i) {
+      return xScale(d[0]) - .5;
+    }).attr("width", function(d, i) {
+      return width / (maxManaCost + 2);
+    }).style("fill", function(d, i) {
+      return DECKVIZ.util.colorScale['X'];
+    }).attr('height', function(d) {
+      return yScale(d[1]) - .5;
+    }).attr('y', function(d) {
+      return height - yScale(d[1]) - .5;
+    });
   };
 
   DECKVIZ.Deck.deckPie = function(deck, originalDeck) {
