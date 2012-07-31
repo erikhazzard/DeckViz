@@ -33,10 +33,10 @@ $(document).ready( ()->
             return @
     })
 
-    test('calculateConvertedManaCost(): Returns cost', ()->
+    test('calculateCardManaCost(): Returns cost', ()->
         #Store refs
         util = DECKVIZ.util
-        calcCC = DECKVIZ.util.convertedManaCost
+        calcCC = DECKVIZ.util.calculateCardManaCost
 
         #Test invalid values
         strictEqual(
@@ -282,6 +282,18 @@ $(document).ready( ()->
             getDeck({ deckText: deckText }),
             resultDeck,
             'Deck without any numbers returns: e.g., { "Invalid": NaN }'
+        )
+
+        #Make sure it doesn't blow up if we pass in undefined or an empty string
+        deepEqual(
+            getDeck({ deckText: undefined }),
+            {},
+            'Undefined deckText returns an empty object'
+        )
+        deepEqual(
+            getDeck({ deckText: '' }),
+            {},
+            '"" string for deckText returns an empty object'
         )
 
     )

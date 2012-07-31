@@ -25,26 +25,33 @@ DECKVIZ.Deck.getDeckFromInput = (params) =>
     if params.deckText
         deckText = params.deckText
 
-    #Split the lines
-    deckArray = deckText.split('\n')
+    #If the deck text is undefined (happens sometimes when an empty string
+    #   is passed in) set the dectText to be an empty string
+    if !deckText
+        deckText = ''
+        deckArray = false
+    else
+        #Split the lines
+        deckArray = deckText.split('\n')
 
     #Setup deck we'll return
     deck = {}
 
     #For each line in the deck text, add it to the deck object
-    for cardText in deckArray
-        #Get the number of cards
-        #   Replace any non number or space characters.  Whatever number is
-        #   found first will be parsed as the number of times this card is
-        #   in the deck. e.g., "10 Forest" will get parsed as 10
-        numCards = parseInt(cardText.replace(/[^0-9 ]/gi, ''), 10)
+    if deckArray
+        for cardText in deckArray
+            #Get the number of cards
+            #   Replace any non number or space characters.  Whatever number is
+            #   found first will be parsed as the number of times this card is
+            #   in the deck. e.g., "10 Forest" will get parsed as 10
+            numCards = parseInt(cardText.replace(/[^0-9 ]/gi, ''), 10)
 
-        #Replace the leading number and space with nothing
-        #   e.g., "10 Forest" becomes "Forest"
-        cardName = cardText.replace(/[0-9]+ */gi, '')
+            #Replace the leading number and space with nothing
+            #   e.g., "10 Forest" becomes "Forest"
+            cardName = cardText.replace(/[0-9]+ */gi, '')
 
-        #update the deck
-        deck[cardName] = numCards
+            #update the deck
+            deck[cardName] = numCards
 
     return deck
 
@@ -188,9 +195,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         0,
         50]
     
-    #Store reference to convertedManaCost function which calculates the
+    #Store reference to calculateCardManaCost function which calculates the
     #   converted mana cost
-    calcCC = DECKVIZ.util.convertedManaCost
+    calcCC = DECKVIZ.util.calculateCardManaCost
 
     #Build a dict of mana costs: number of cards with that cost
     manaCostLookup = {}
@@ -202,6 +209,8 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Setup the manaCostLookup object
     #------------------------------------
     for card in deck
+        #Calculate the mana cost for each card
+        #   e.g., turn "2BB" into "4"
         cardCost = calcCC(card.manacost)
 
         #Keep track of how many cards have what mana cost
@@ -223,7 +232,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             tmpDeck.push(card)
 
     #Add one to whatever the max mana cost was
-    maxManaCost += 2
+    maxManaCost += 1
     
     #Store original deck with lands
     completeDeck = _.clone(deck)
@@ -237,7 +246,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     mostNumOfCards = 0
 
     #Setup array to have [cost, number of cards]
-    #Determine the most number of cards and keep reference to it
+    #Determine the most number of cards a mana cost has 
+    #   and keep reference to it
+    #This is used to setup the y scale
     for cost, num of manaCostLookup
         if cost? and parseInt(cost)
             manaCostArray.push([cost, num])
@@ -278,6 +289,8 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     manaBars = barsGroup
         .selectAll("rect")
         .data(manaCostArray)
+
+    console.log(manaCostArray)
 
     #Enter each data element
     manaBars.enter()
@@ -329,18 +342,52 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 return yScale(d[1]) - .5
             )
 
+    #------------------------------------
     #Labels for num of cards
-    '''
-    manaBars.append('text')
+    #------------------------------------
+    manaBarsNumLabel = barsGroup
+        .selectAll("text")
+        .data(manaCostArray)
+
+    #Enter each data element
+    manaBarsNumLabel.enter()
+        .append("text")
+        .style("fill", '#000000')
+        .style('text-shadow', '0 0 1px #ffffff')
+        .style('opacity', .3)
+        .attr("x", (d,i)=>
+            return (xScale(d[0]) - 5) + ((width/(maxManaCost + barSpacingFactor))/2)
+        )
+        .attr("y", (d,i) =>
+            #Make the label sit on top of the bar
+            return height
+        )
+
+    #Remove the labels
+    manaBarsNumLabel.exit()
+        .transition()
+        .duration(300)
+        .ease('circle')
+            #Fade the items down
+            .attr('y', height)
+            .attr('height', 0)
+            .text('0')
+            .remove()
+
+    #Update the label position
+    manaBarsNumLabel.transition()
+        .duration(250)
+        .ease("quad")
         .text((d,i)=>
             return d[1]
         )
         .attr("x", (d,i)=>
             return (xScale(d[0]) - 5) + ((width/(maxManaCost + barSpacingFactor))/2)
-        ).attr("y", height - 15)
-        .style('fill', '#ffffff')
-        .style('text-shadow', '0 -1px 2px #000000')
-    '''
+        )
+        .attr("y", (d,i) =>
+            #Make the label sit on top of the bar
+            return height - yScale(d[1]) - 5
+        )
 
     #------------------------------------
     #Add bottom labels

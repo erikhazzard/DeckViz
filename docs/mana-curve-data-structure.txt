@@ -1,0 +1,32 @@
+Use Cases: 
+    -Show total mana curve
+    -Group by Color
+    -Group by spell type
+        -Instant, Sorcery, Land, Creature
+        
+[
+    #Mana Cost, Number of card
+    [ 1, 4 ]
+
+    [
+        #Total
+        total: {
+            cost: 1, 
+            num; 4
+        },
+        
+        #Spell type (type: num of cards)
+        spells: {
+            instant: 2
+            sorcery: 1
+            creature: 1
+        },
+        
+        #Color
+        color: {
+            green: 3,
+            blue: 1
+        }
+    ]
+
+]

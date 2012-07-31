@@ -7,13 +7,20 @@
     params = params || {};
     if (params.el) deckText = el.val();
     if (params.deckText) deckText = params.deckText;
-    deckArray = deckText.split('\n');
+    if (!deckText) {
+      deckText = '';
+      deckArray = false;
+    } else {
+      deckArray = deckText.split('\n');
+    }
     deck = {};
-    for (_i = 0, _len = deckArray.length; _i < _len; _i++) {
-      cardText = deckArray[_i];
-      numCards = parseInt(cardText.replace(/[^0-9 ]/gi, ''), 10);
-      cardName = cardText.replace(/[0-9]+ */gi, '');
-      deck[cardName] = numCards;
+    if (deckArray) {
+      for (_i = 0, _len = deckArray.length; _i < _len; _i++) {
+        cardText = deckArray[_i];
+        numCards = parseInt(cardText.replace(/[^0-9 ]/gi, ''), 10);
+        cardName = cardText.replace(/[0-9]+ */gi, '');
+        deck[cardName] = numCards;
+      }
     }
     return deck;
   };
@@ -87,13 +94,13 @@
   };
 
   DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-    var barSpacingFactor, barsGroup, calcCC, card, cardCost, completeDeck, cost, height, highestCardCount, manaBars, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+    var barSpacingFactor, barsGroup, calcCC, card, cardCost, completeDeck, cost, height, highestCardCount, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
     svgEl = d3.select('#svg-el-deck-mana');
     width = svgEl.attr('width');
     height = svgEl.attr('height');
     maxManaCost = 7;
     padding = [10, 0, 0, 50];
-    calcCC = DECKVIZ.util.convertedManaCost;
+    calcCC = DECKVIZ.util.calculateCardManaCost;
     manaCostLookup = {};
     tmpDeck = [];
     for (_i = 0, _len = deck.length; _i < _len; _i++) {
@@ -107,7 +114,7 @@
       }
       if (card.manacost) tmpDeck.push(card);
     }
-    maxManaCost += 2;
+    maxManaCost += 1;
     completeDeck = _.clone(deck);
     deck = tmpDeck;
     manaCostArray = [];
@@ -127,6 +134,7 @@
     barsGroup = d3.select('#manaCurve');
     barSpacingFactor = 1.5;
     manaBars = barsGroup.selectAll("rect").data(manaCostArray);
+    console.log(manaCostArray);
     manaBars.enter().append("rect").style("fill", '#ffffff').attr("x", function(d, i) {
       return xScale(d[0]) - .5;
     }).attr("width", function(d, i) {
@@ -148,7 +156,20 @@
     }).attr("height", function(d, i) {
       return yScale(d[1]) - .5;
     });
-    'manaBars.append(\'text\')\n    .text((d,i)=>\n        return d[1]\n    )\n    .attr("x", (d,i)=>\n        return (xScale(d[0]) - 5) + ((width/(maxManaCost + barSpacingFactor))/2)\n    ).attr("y", height - 15)\n    .style(\'fill\', \'#ffffff\')\n    .style(\'text-shadow\', \'0 -1px 2px #000000\')';
+    manaBarsNumLabel = barsGroup.selectAll("text").data(manaCostArray);
+    manaBarsNumLabel.enter().append("text").style("fill", '#000000').style('text-shadow', '0 0 1px #ffffff').style('opacity', .3).attr("x", function(d, i) {
+      return (xScale(d[0]) - 5) + ((width / (maxManaCost + barSpacingFactor)) / 2);
+    }).attr("y", function(d, i) {
+      return height;
+    });
+    manaBarsNumLabel.exit().transition().duration(300).ease('circle').attr('y', height).attr('height', 0).text('0').remove();
+    manaBarsNumLabel.transition().duration(250).ease("quad").text(function(d, i) {
+      return d[1];
+    }).attr("x", function(d, i) {
+      return (xScale(d[0]) - 5) + ((width / (maxManaCost + barSpacingFactor)) / 2);
+    }).attr("y", function(d, i) {
+      return height - yScale(d[1]) - 5;
+    });
     svgEl = d3.select('#axesLabels');
     $(svgEl.node()).empty();
     svgEl.selectAll("text.label").data((function() {

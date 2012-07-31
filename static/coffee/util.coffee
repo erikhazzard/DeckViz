@@ -4,7 +4,7 @@
 #
 # Sets up util functions for the app
 # ===========================================================================
-DECKVIZ.util.convertedManaCost = (cost)=>
+DECKVIZ.util.calculateCardManaCost= (cost)=>
     #This function returns the converted mana cost of a passed in cost string
     #   X is considered 0
     if cost == null || cost == undefined

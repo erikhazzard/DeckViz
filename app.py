@@ -52,7 +52,7 @@ def get_items_from_query(query=None):
     sort = None
 
     #Store key value pairs
-    #If no query, get all items (limit and paginate
+    #If no query, get all items 
     if query is None:
         db_items = target_db.find()
     else:

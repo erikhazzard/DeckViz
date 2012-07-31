@@ -1,0 +1,16 @@
+Mana Curve Graph
+=========================================
+Visualization Type: Bar Chart
+Explanation: A Bar chart is the appropriate visualization for a mana curve for
+    a few different reasons:
+    -Bar charts are perfect for showing discrete values
+    -Mana is a discrete value
+        -The area between 1 and 2 mana means nothing, since there are no "1.5" mana cost cards
+    -Line / Area charts are not as good of a choice, since line (and area) charts show continuous values.
+        -In Magic, mana is discrete (1 mana, 2 mana, 3 mana, etc. - but not 1.4, not 2.7, etc.)
+    -The shape that a line chart makes when attempting to show a mana curve is misleading
+        -Most decks do not have any 0 mana cost cards, so there is always a slope between 0 and 1 mana, which does not actually exist
+    -To reiterate - the slope that a line chart shows in between mana costs has no meaning in the game, since mana is a discrete value.
+
+-Since this tool exists to help analyze decks and aids in making card decisions, transitions are used when updating the deck input
+    -This is done to give you and idea how each each affects the mana curve of the deck
