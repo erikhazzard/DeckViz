@@ -78,6 +78,7 @@ DECKVIZ.Deck.getCardTypes = (params) =>
 # ===========================================================================
 #Setup deck to change on keyup
 $('#deck').on('keyup', (e)=>
+    #Create the mana curve on each keyup
     DECKVIZ.Deck.create(
         DECKVIZ.Deck.getDeckFromInput({deckText: $('#deck').val()}),
         true
@@ -107,7 +108,7 @@ $('#deck').val('''
     5 Plains
 ''')
 
-DECKVIZ.Deck.create = (deck, update)=>
+DECKVIZ.Deck.create = (deck)=>
     #Takes in a deck parameter, which is an array of cards
     if not deck
         deckText = $('#deck').val()
@@ -158,12 +159,8 @@ DECKVIZ.Deck.create = (deck, update)=>
 
             cardTypes = DECKVIZ.Deck.getCardTypes({deck: finalDeck})
 
-            #Get the card types
-            if update == true
-                DECKVIZ.Deck.updateManaCurve(finalDeck, deck)
-            else
-                #Setup deck with proper number of cards
-                DECKVIZ.Deck.manaCurve(finalDeck, deck)
+            #Create the mana curve graph
+            DECKVIZ.Deck.drawManaCurve(finalDeck, deck)
     })
 
 #========================================
@@ -171,14 +168,14 @@ DECKVIZ.Deck.create = (deck, update)=>
 #Mana Curve
 #
 #========================================
-DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
-    svgId = '#svg-el-deck-mana'
-
-    $(svgId).empty()
+DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
+    #Draws the mana curve graph
+    #   Redraws the axises each call, and transitions between bars / bar heights
+    svgEl = d3.select('#svg-el-deck-mana')
 
     #get width and height
-    width = $(svgId).attr('width')
-    height = $(svgId).attr('height')
+    width = svgEl.attr('width')
+    height = svgEl.attr('height')
 
     #chart config
     maxManaCost = 10
@@ -246,41 +243,66 @@ DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
         .domain([0, highestCardCount])
         .rangeRound([padding[0], height])
 
-    svgEl = d3.select(svgId)
+    #Get the svgElement which will contain the graph
+    svgEl = d3.select('#manaCurve')
 
     chart = svgEl
         .selectAll("rect")
         .data(manaCostArray)
-        .enter()
-        
-    #------------------------------------
-    #Add the bars for the mana curve
-    #------------------------------------
-    chart.append("rect")
+
+    #Enter each data element
+    chart.enter()
+        #Add a rect for each item
+        .append("rect")
         .attr("x", (d, i) =>
+            #return 0
             return xScale(d[0]) - .5
         )
         .attr("width", (d,i)=>
+            #return 0
             return width/(maxManaCost+2)
         )
         .style("fill", (d,i) =>
             return DECKVIZ.util.colorScale['X']
         )
-        .attr("y", (d) =>
-            return height
-        )
-        .attr("height", (d)=>
+        .attr('height', (d)=>
             return 0
         )
+        .attr('y', (d)=>
+            return height
+        )
+
+    #Exit items / cleanup
+    chart.exit()
         .transition()
-            .attr('height', (d)=>
-                return yScale(d[1]) - .5
+        .duration(300)
+        .ease('circle')
+            .attr('height', 0)
+            .remove()
+
+    #Update each bar width / height
+    chart
+        .transition()
+        .duration(300)
+        .ease("quad")
+            .attr("width", (d,i)=>
+                return width/(maxManaCost+2)
             )
-            .attr('y', (d)=>
+            .attr('y', (d,i)=>
                 return height - yScale(d[1]) - .5
             )
-    
+            .attr('x', (d,i)=>
+                return xScale(d[0]) - .5
+            )
+            .attr("height", (d,i)=>
+                return yScale(d[1]) - .5
+            )
+            #.attr("transform", (d,i)=>
+            #    return "translate(" + [0, y(i)] + ")"
+            #)
+
     #Labels for num of cards
+    '''
     chart.append('text')
         .text((d,i)=>
             return d[1]
@@ -290,10 +312,14 @@ DECKVIZ.Deck.manaCurve = (deck, originalDeck)=>
         ).attr("y", height - 15)
         .style('fill', '#ffffff')
         .style('text-shadow', '0 -1px 2px #000000')
-
+    '''
     #------------------------------------
     #Add bottom labels
     #------------------------------------
+    svgEl = d3.select('#axesLabels')
+    #Clear out existing labels / axes
+    $(svgEl.node()).empty()
+
     svgEl.selectAll("text.label")
         .data(num for num in [0..maxManaCost])
         .enter()

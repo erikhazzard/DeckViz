@@ -31,4 +31,9 @@
 
   window.DECKVIZ = DECKVIZ;
 
+  DECKVIZ.init = function() {
+    DECKVIZ.Deck.create();
+    return true;
+  };
+
 }).call(this);

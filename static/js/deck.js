@@ -46,7 +46,7 @@
 
   $('#deck').val('2 Tamiyo, the Moon Sage\n3 Entreat the Angels\n4 Terminus\n4 Lingering Souls\n1 Isolated Chapel\n1 Spellskite\n3 Dismember\n4 Pristine Talisman\n1 White Sun\'s Zenith\n4 Seachrome Coast\n3 Gideon Jura\n2 Day of Judgment\n4 Glacial Fortress\n4 Drowned Catacomb\n3 Oblivion Ring\n4 Think Twice\n4 Ghost Quarter\n1 Swamp\n3 Island\n5 Plains');
 
-  DECKVIZ.Deck.create = function(deck, update) {
+  DECKVIZ.Deck.create = function(deck) {
     var cardName, deckCopy, deckText, finalDeck, num, url, urlArray;
     if (!deck) {
       deckText = $('#deck').val();
@@ -81,21 +81,16 @@
         cardTypes = DECKVIZ.Deck.getCardTypes({
           deck: finalDeck
         });
-        if (update === true) {
-          return DECKVIZ.Deck.updateManaCurve(finalDeck, deck);
-        } else {
-          return DECKVIZ.Deck.manaCurve(finalDeck, deck);
-        }
+        return DECKVIZ.Deck.drawManaCurve(finalDeck, deck);
       }
     });
   };
 
-  DECKVIZ.Deck.manaCurve = function(deck, originalDeck) {
-    var calcCC, card, chart, completeDeck, cost, height, highestCardCount, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, originalHeight, padding, svgEl, svgId, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
-    svgId = '#svg-el-deck-mana';
-    $(svgId).empty();
-    width = $(svgId).attr('width');
-    height = $(svgId).attr('height');
+  DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
+    var calcCC, card, chart, completeDeck, cost, height, highestCardCount, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, originalHeight, padding, svgEl, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+    svgEl = d3.select('#svg-el-deck-mana');
+    width = svgEl.attr('width');
+    height = svgEl.attr('height');
     maxManaCost = 10;
     padding = [10, 0, 0, 50];
     calcCC = DECKVIZ.util.convertedManaCost;
@@ -127,28 +122,32 @@
     highestCardCount = 20;
     if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
     yScale = d3.scale.linear().domain([0, highestCardCount]).rangeRound([padding[0], height]);
-    svgEl = d3.select(svgId);
-    chart = svgEl.selectAll("rect").data(manaCostArray).enter();
-    chart.append("rect").attr("x", function(d, i) {
+    svgEl = d3.select('#manaCurve');
+    chart = svgEl.selectAll("rect").data(manaCostArray);
+    chart.enter().append("rect").attr("x", function(d, i) {
       return xScale(d[0]) - .5;
     }).attr("width", function(d, i) {
       return width / (maxManaCost + 2);
     }).style("fill", function(d, i) {
       return DECKVIZ.util.colorScale['X'];
-    }).attr("y", function(d) {
-      return height;
-    }).attr("height", function(d) {
+    }).attr('height', function(d) {
       return 0;
-    }).transition().attr('height', function(d) {
-      return yScale(d[1]) - .5;
     }).attr('y', function(d) {
-      return height - yScale(d[1]) - .5;
+      return height;
     });
-    chart.append('text').text(function(d, i) {
-      return d[1];
-    }).attr("x", function(d, i) {
-      return (xScale(d[0]) - 5) + ((width / (maxManaCost + 2)) / 2);
-    }).attr("y", height - 15).style('fill', '#ffffff').style('text-shadow', '0 -1px 2px #000000');
+    chart.exit().transition().duration(300).ease('circle').attr('height', 0).remove();
+    chart.transition().duration(300).ease("quad").attr("width", function(d, i) {
+      return width / (maxManaCost + 2);
+    }).attr('y', function(d, i) {
+      return height - yScale(d[1]) - .5;
+    }).attr('x', function(d, i) {
+      return xScale(d[0]) - .5;
+    }).attr("height", function(d, i) {
+      return yScale(d[1]) - .5;
+    });
+    'chart.append(\'text\')\n    .text((d,i)=>\n        return d[1]\n    )\n    .attr("x", (d,i)=>\n        return (xScale(d[0]) - 5) + ((width/(maxManaCost+2))/2)\n    ).attr("y", height - 15)\n    .style(\'fill\', \'#ffffff\')\n    .style(\'text-shadow\', \'0 -1px 2px #000000\')';
+    svgEl = d3.select('#axesLabels');
+    $(svgEl.node()).empty();
     svgEl.selectAll("text.label").data((function() {
       var _results;
       _results = [];

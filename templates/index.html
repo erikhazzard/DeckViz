@@ -35,7 +35,10 @@
         <!-- Right Side (visualizations) -->
         <div id='site-right-side-wrapper'>
             <div id='svg-wrapper' style='margin: 1em;'>
-                <svg id='svg-el-deck-mana' width=1300 height=400></svg>
+                <svg id='svg-el-deck-mana' width=1100 height=400>
+                    <g id='manaCurve'></g>
+                    <g id='axesLabels'></g>
+                </svg>
                 <svg id='svg-el-deck-pie' width=600 height=400></svg>
             </div>
         </div>
@@ -75,8 +78,7 @@
 //TODO: use different scripts based on environment. In testing, we want to call 
 //  this manually so we can run unit tests
 $(document).ready(function(){
-    //DECKVIZ.Charts.Cards();
-    DECKVIZ.Deck.create();
+    DECKVIZ.init();
 });
 </script>
 
