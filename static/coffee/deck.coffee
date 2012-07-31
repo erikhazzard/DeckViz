@@ -178,7 +178,8 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     height = svgEl.attr('height')
 
     #chart config
-    maxManaCost = 10
+    #Default the max cost to 7
+    maxManaCost = 7
 
     #Padding for graph
     padding = [
@@ -194,16 +195,35 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Build a dict of mana costs: number of cards with that cost
     manaCostLookup = {}
 
+    #This will be our new deck object
     tmpDeck = []
-
+    #------------------------------------
     #Copy deck into new array / get null mana cost spells out
+    #Setup the manaCostLookup object
+    #------------------------------------
     for card in deck
-        if manaCostLookup[calcCC(card.manacost)]
-            manaCostLookup[calcCC(card.manacost)] += 1
+        cardCost = calcCC(card.manacost)
+
+        #Keep track of how many cards have what mana cost
+        if manaCostLookup[cardCost]
+            #This key already exists, so add 1 to it
+            manaCostLookup[cardCost] += 1
         else
-            manaCostLookup[calcCC(card.manacost)] = 1
+            #First time we've seen this card, so set it to 1
+            manaCostLookup[cardCost] = 1
+
+            #Update the maxManaCost if we've found a card with a higher
+            #   mana cost than the starting maxCost
+            if cardCost > maxManaCost
+                maxManaCost = cardCost
+
+        #If the card has a mana (the original mana cost, e.g., 2U),
+        #   add it to the tmpDeck
         if card.manacost
             tmpDeck.push(card)
+
+    #Add one to whatever the max mana cost was
+    maxManaCost += 2
     
     #Store original deck with lands
     completeDeck = _.clone(deck)
@@ -215,7 +235,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #turn manaCostLookup into array
     manaCostArray = []
     mostNumOfCards = 0
-    
+
     #Setup array to have [cost, number of cards]
     #Determine the most number of cards and keep reference to it
     for cost, num of manaCostLookup
@@ -224,13 +244,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             if num > mostNumOfCards
                 mostNumOfCards = num
 
-    #Create a bar chart for mana curve
-    xScale = d3.scale.linear()
-        #Goes from 0 to the highest mana cost
-        .domain([0, maxManaCost])
-        .range([padding[3], width])
-
-    originalHeight = height
+    #Give the height some padding
     height = height - 100
 
     #Highest number mana will go to
@@ -238,32 +252,45 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     if mostNumOfCards > 20
         highestCardCount = mostNumOfCards * 1.2
 
+    #------------------------------------
+    #Setup scale
+    #------------------------------------
+    #Create a bar chart for mana curve
+    xScale = d3.scale.linear()
+        #Goes from 0 to the highest mana cost
+        .domain([0, maxManaCost])
+        .range([padding[3], width])
+
     yScale = d3.scale.linear()
         #Goes from 0 to the highest occurence of cards with that mana cost
         .domain([0, highestCardCount])
         .rangeRound([padding[0], height])
 
-    #Get the svgElement which will contain the graph
-    svgEl = d3.select('#manaCurve')
+    #------------------------------------
+    #Setup Mana bars
+    #------------------------------------
+    #Get the barsGroup which will contain the graph
+    barsGroup = d3.select('#manaCurve')
 
-    chart = svgEl
+    #Space between each bar
+    barSpacingFactor = 1.5
+
+    manaBars = barsGroup
         .selectAll("rect")
         .data(manaCostArray)
 
     #Enter each data element
-    chart.enter()
+    manaBars.enter()
         #Add a rect for each item
         .append("rect")
+        .style("fill", '#ffffff')
         .attr("x", (d, i) =>
             #return 0
             return xScale(d[0]) - .5
         )
         .attr("width", (d,i)=>
             #return 0
-            return width/(maxManaCost+2)
-        )
-        .style("fill", (d,i) =>
-            return DECKVIZ.util.colorScale['X']
+            return width/(maxManaCost + barSpacingFactor )
         )
         .attr('height', (d)=>
             return 0
@@ -273,20 +300,24 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         )
 
     #Exit items / cleanup
-    chart.exit()
+    manaBars.exit()
         .transition()
         .duration(300)
         .ease('circle')
+            #Fade the items down
+            .attr('y', height)
             .attr('height', 0)
             .remove()
 
     #Update each bar width / height
-    chart
-        .transition()
-        .duration(300)
+    manaBars.transition()
+        .duration(250)
         .ease("quad")
+        .style("fill", (d,i) =>
+            return DECKVIZ.util.colorScale['X']
+        )
             .attr("width", (d,i)=>
-                return width/(maxManaCost+2)
+                return width/(maxManaCost + barSpacingFactor )
             )
             .attr('y', (d,i)=>
                 return height - yScale(d[1]) - .5
@@ -297,22 +328,20 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             .attr("height", (d,i)=>
                 return yScale(d[1]) - .5
             )
-            #.attr("transform", (d,i)=>
-            #    return "translate(" + [0, y(i)] + ")"
-            #)
 
     #Labels for num of cards
     '''
-    chart.append('text')
+    manaBars.append('text')
         .text((d,i)=>
             return d[1]
         )
         .attr("x", (d,i)=>
-            return (xScale(d[0]) - 5) + ((width/(maxManaCost+2))/2)
+            return (xScale(d[0]) - 5) + ((width/(maxManaCost + barSpacingFactor))/2)
         ).attr("y", height - 15)
         .style('fill', '#ffffff')
         .style('text-shadow', '0 -1px 2px #000000')
     '''
+
     #------------------------------------
     #Add bottom labels
     #------------------------------------
@@ -326,7 +355,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         .append('svg:text')
             .attr('class', 'label')
             .attr("x", (d,i)=>
-                return (xScale(d) - .5) + ((width/(maxManaCost+2))/2)
+                return (xScale(d) - .5) + ((width/(maxManaCost + barSpacingFactor))/2)
             ).attr("y", height + 20)
             .text((d,i)=>
                 return d
@@ -368,105 +397,6 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
 
     return true
 
-#========================================
-#
-#Update manaa curve 
-#
-#========================================
-DECKVIZ.Deck.updateManaCurve = (deck, originalDeck)=>
-    svgId = '#svg-el-deck-mana'
-
-    #get width and height
-    width = $(svgId).attr('width')
-    height = $(svgId).attr('height')
-    maxManaCost = 10
-    padding = [
-        10,
-        0,
-        0,
-        50]
-    #Store reference to convertedManaCost function which calculates the
-    #   converted mana cost
-    calcCC = DECKVIZ.util.convertedManaCost
-
-    #Build a dict of mana costs: number of cards with that cost
-    manaCostLookup = {}
-
-    tmpDeck = []
-
-    #Copy deck into new array / get null mana cost spells out
-    for card in deck
-        if manaCostLookup[calcCC(card.manacost)]
-            manaCostLookup[calcCC(card.manacost)] += 1
-        else
-            manaCostLookup[calcCC(card.manacost)] = 1
-        if card.manacost
-            tmpDeck.push(card)
-    
-    #Store original deck with lands
-    completeDeck = _.clone(deck)
-
-    #reassign deck, point to the original deck that contains cards
-    #   which have null manacost (e.g., land)
-    deck = tmpDeck
-
-    #turn manaCostLookup into array
-    manaCostArray = []
-    mostNumOfCards = 0
-    
-    #Setup array to have [cost, number of cards]
-    #Determine the most number of cards and keep reference to it
-    for cost, num of manaCostLookup
-        if cost? and parseInt(cost)
-            manaCostArray.push([cost, num])
-            if num > mostNumOfCards
-                mostNumOfCards = num
-
-    #Create a bar chart for mana curve
-    xScale = d3.scale.linear()
-        #Goes from 0 to the highest mana cost
-        .domain([0, maxManaCost])
-        .range([padding[3], width])
-
-    originalHeight = height
-    height = height - 100
-
-    #Highest number mana will go to
-    highestCardCount = 20
-    if mostNumOfCards > 20
-        highestCardCount = mostNumOfCards * 1.2
-
-    yScale = d3.scale.linear()
-        #Goes from 0 to the highest occurence of cards with that mana cost
-        .domain([0, highestCardCount])
-        .rangeRound([padding[0], height])
-
-    svgEl = d3.select(svgId)
-
-
-    #------------------------------------
-    #Update the chart
-    #TODO: This function
-    #   -Add rects when necessary
-    chart = svgEl
-        .selectAll("rect")
-        .data(manaCostArray)
-        .transition()
-            .attr("x", (d, i) =>
-                return xScale(d[0]) - .5
-            )
-            .attr("width", (d,i)=>
-                return width/(maxManaCost+2)
-            )
-            .style("fill", (d,i) =>
-                return DECKVIZ.util.colorScale['X']
-            )
-            .attr('height', (d)=>
-                return yScale(d[1]) - .5
-            )
-            .attr('y', (d)=>
-                return height - yScale(d[1]) - .5
-            )
 #========================================
 #
 #Card Type Breakdown
