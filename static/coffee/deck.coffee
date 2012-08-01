@@ -214,17 +214,55 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         cardCost = calcCC(card.manacost)
 
         #Keep track of how many cards have what mana cost
+        #--------------------------------
         if manaCostLookup[cardCost]
             #This key already exists, so add 1 to it
-            manaCostLookup[cardCost] += 1
+            manaCostLookup[cardCost].total += 1
         else
             #First time we've seen this card, so set it to 1
-            manaCostLookup[cardCost] = 1
+            manaCostLookup[cardCost] = {}
+            manaCostLookup[cardCost].total = 1
 
             #Update the maxManaCost if we've found a card with a higher
             #   mana cost than the starting maxCost
             if cardCost > maxManaCost
                 maxManaCost = cardCost
+
+        #Now we need to do the same for each card type
+        #--------------------------------
+        #Check card types
+        if card.type
+            #Get only the first type, not subtypes (for now)
+            cardType = card.type.split(' - ')[0]
+            if manaCostLookup[cardCost][cardType]
+                manaCostLookup[cardCost][cardType] += 1
+            else
+                manaCostLookup[cardCost][cardType] = 1
+
+        #Do it for each color
+        #--------------------------------
+        #Card color is defined by the mana cost
+        curManaCost = card.manacost
+        if curManaCost
+            #Get all the colors
+            curManaCost = curManaCost.replace(/[^UWBRG]+/gi,'')
+            #Get the unique values (e.g., "GG" to "G")
+            curManaCost = _.unique(curManaCost.split('')).join('')
+
+            if curManaCost.length > 0
+                #Colored spell (might be multicolored)
+                curManaCost = curManaCost
+            else
+                #Colorless spell (PROBABLY, need to check)
+                curManaCost = 'colorless'
+
+            #Add to dict
+            if manaCostLookup[cardCost][curManaCost]
+                manaCostLookup[cardCost][curManaCost] += 1
+            else
+                manaCostLookup[cardCost][curManaCost] = 1
+
+    console.log('MANA', manaCostLookup)
 
     #Add one to whatever the max mana cost was
     maxManaCost += 1
@@ -240,26 +278,29 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Determine the most number of cards a mana cost has 
     #   and keep reference to it
     #This is used to setup the y scale
-    for cost, num of manaCostLookup
+    for cost, value of manaCostLookup
         if cost? and parseInt(cost)
-            manaCostArray.push([cost, num])
-            if num > mostNumOfCards
-                mostNumOfCards = num
+            manaCostArray.push([cost, value.total])
+            if value.total > mostNumOfCards
+                mostNumOfCards = value.total
 
+    #------------------------------------
     #More robust object...
-    curveData = []
+    curveDataByColor = []
     for cost, num of manaCostLookup
         if cost? and parseInt(cost)
             #Push the total cost and amount
-            curveData.push([
-                {total: {
-                    cost: cost,
-                    num: num
-                }}
+            curveDataByColor.push([
+                cost,
+                #Black
+                #Blue
+                #Green
+                #Red
+                #White
             ])
             if num > mostNumOfCards
                 mostNumOfCards = num
-    console.log(curveData)
+    console.log(curveDataByColor)
 
 
     #------------------------------------

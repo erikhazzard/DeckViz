@@ -94,7 +94,7 @@
   };
 
   DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-    var barSpacingFactor, barsGroup, calcCC, card, cardCost, cost, curveData, height, highestCardCount, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+    var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, cost, curManaCost, curveDataByColor, height, highestCardCount, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
     svgEl = d3.select('#svg-el-deck-mana');
     width = svgEl.attr('width');
     height = svgEl.attr('height');
@@ -107,38 +107,56 @@
       card = deck[_i];
       cardCost = calcCC(card.manacost);
       if (manaCostLookup[cardCost]) {
-        manaCostLookup[cardCost] += 1;
+        manaCostLookup[cardCost].total += 1;
       } else {
-        manaCostLookup[cardCost] = 1;
+        manaCostLookup[cardCost] = {};
+        manaCostLookup[cardCost].total = 1;
         if (cardCost > maxManaCost) maxManaCost = cardCost;
       }
+      if (card.type) {
+        cardType = card.type.split(' - ')[0];
+        if (manaCostLookup[cardCost][cardType]) {
+          manaCostLookup[cardCost][cardType] += 1;
+        } else {
+          manaCostLookup[cardCost][cardType] = 1;
+        }
+      }
+      curManaCost = card.manacost;
+      if (curManaCost) {
+        curManaCost = curManaCost.replace(/[^UWBRG]+/gi, '');
+        curManaCost = _.unique(curManaCost.split('')).join('');
+        if (curManaCost.length > 0) {
+          curManaCost = curManaCost;
+        } else {
+          curManaCost = 'colorless';
+        }
+        if (manaCostLookup[cardCost][curManaCost]) {
+          manaCostLookup[cardCost][curManaCost] += 1;
+        } else {
+          manaCostLookup[cardCost][curManaCost] = 1;
+        }
+      }
     }
+    console.log('MANA', manaCostLookup);
     maxManaCost += 1;
     manaCostArray = [];
     mostNumOfCards = 0;
     for (cost in manaCostLookup) {
-      num = manaCostLookup[cost];
+      value = manaCostLookup[cost];
       if ((cost != null) && parseInt(cost)) {
-        manaCostArray.push([cost, num]);
-        if (num > mostNumOfCards) mostNumOfCards = num;
+        manaCostArray.push([cost, value.total]);
+        if (value.total > mostNumOfCards) mostNumOfCards = value.total;
       }
     }
-    curveData = [];
+    curveDataByColor = [];
     for (cost in manaCostLookup) {
       num = manaCostLookup[cost];
       if ((cost != null) && parseInt(cost)) {
-        curveData.push([
-          {
-            total: {
-              cost: cost,
-              num: num
-            }
-          }
-        ]);
+        curveDataByColor.push([cost]);
         if (num > mostNumOfCards) mostNumOfCards = num;
       }
     }
-    console.log(curveData);
+    console.log(curveDataByColor);
     highestCardCount = 20;
     if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
     xScale = d3.scale.linear().domain([0, maxManaCost]).range([padding[3], width]);
