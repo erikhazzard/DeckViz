@@ -295,7 +295,6 @@ $(document).ready( ()->
             {},
             '"" string for deckText returns an empty object'
         )
-
     )
 
     #=========================================================================

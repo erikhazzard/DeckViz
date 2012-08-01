@@ -183,6 +183,8 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #get width and height
     width = svgEl.attr('width')
     height = svgEl.attr('height')
+    #Give the height some padding
+    height = height - 100
 
     #chart config
     #Default the max cost to 7
@@ -202,8 +204,6 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Build a dict of mana costs: number of cards with that cost
     manaCostLookup = {}
 
-    #This will be our new deck object
-    tmpDeck = []
     #------------------------------------
     #Copy deck into new array / get null mana cost spells out
     #Setup the manaCostLookup object
@@ -226,21 +226,12 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             if cardCost > maxManaCost
                 maxManaCost = cardCost
 
-        #If the card has a mana (the original mana cost, e.g., 2U),
-        #   add it to the tmpDeck
-        if card.manacost
-            tmpDeck.push(card)
-
     #Add one to whatever the max mana cost was
     maxManaCost += 1
-    
-    #Store original deck with lands
-    completeDeck = _.clone(deck)
 
-    #reassign deck, point to the original deck that contains cards
-    #   which have null manacost (e.g., land)
-    deck = tmpDeck
-
+    #------------------------------------
+    #Setup the data object used by the bars
+    #------------------------------------
     #turn manaCostLookup into array
     manaCostArray = []
     mostNumOfCards = 0
@@ -255,9 +246,25 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             if num > mostNumOfCards
                 mostNumOfCards = num
 
-    #Give the height some padding
-    height = height - 100
+    #More robust object...
+    curveData = []
+    for cost, num of manaCostLookup
+        if cost? and parseInt(cost)
+            #Push the total cost and amount
+            curveData.push([
+                {total: {
+                    cost: cost,
+                    num: num
+                }}
+            ])
+            if num > mostNumOfCards
+                mostNumOfCards = num
+    console.log(curveData)
 
+
+    #------------------------------------
+    #Final config
+    #------------------------------------
     #Highest number mana will go to
     highestCardCount = 20
     if mostNumOfCards > 20

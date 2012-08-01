@@ -94,15 +94,15 @@
   };
 
   DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-    var barSpacingFactor, barsGroup, calcCC, card, cardCost, completeDeck, cost, height, highestCardCount, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, tmpDeck, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+    var barSpacingFactor, barsGroup, calcCC, card, cardCost, cost, curveData, height, highestCardCount, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
     svgEl = d3.select('#svg-el-deck-mana');
     width = svgEl.attr('width');
     height = svgEl.attr('height');
+    height = height - 100;
     maxManaCost = 7;
     padding = [10, 0, 0, 50];
     calcCC = DECKVIZ.util.calculateCardManaCost;
     manaCostLookup = {};
-    tmpDeck = [];
     for (_i = 0, _len = deck.length; _i < _len; _i++) {
       card = deck[_i];
       cardCost = calcCC(card.manacost);
@@ -112,11 +112,8 @@
         manaCostLookup[cardCost] = 1;
         if (cardCost > maxManaCost) maxManaCost = cardCost;
       }
-      if (card.manacost) tmpDeck.push(card);
     }
     maxManaCost += 1;
-    completeDeck = _.clone(deck);
-    deck = tmpDeck;
     manaCostArray = [];
     mostNumOfCards = 0;
     for (cost in manaCostLookup) {
@@ -126,7 +123,22 @@
         if (num > mostNumOfCards) mostNumOfCards = num;
       }
     }
-    height = height - 100;
+    curveData = [];
+    for (cost in manaCostLookup) {
+      num = manaCostLookup[cost];
+      if ((cost != null) && parseInt(cost)) {
+        curveData.push([
+          {
+            total: {
+              cost: cost,
+              num: num
+            }
+          }
+        ]);
+        if (num > mostNumOfCards) mostNumOfCards = num;
+      }
+    }
+    console.log(curveData);
     highestCardCount = 20;
     if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
     xScale = d3.scale.linear().domain([0, maxManaCost]).range([padding[3], width]);
