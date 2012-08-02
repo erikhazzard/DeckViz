@@ -39,6 +39,9 @@ def index():
 def tests():
     return flask.render_template('unit_tests.html')
 
+@app.route('/experiment/')
+def experiment():
+    return flask.render_template('experiment.html')
 # ==============================================================================
 #
 # Retrieve Data

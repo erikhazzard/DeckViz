@@ -227,17 +227,24 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             #   mana cost than the starting maxCost
             if cardCost > maxManaCost
                 maxManaCost = cardCost
+        
+        #Store card cost (it's also the key)
+        manaCostLookup[cardCost].cost = cardCost
 
         #Now we need to do the same for each card type
         #--------------------------------
         #Check card types
+        #Make sure type object exists
+        if !manaCostLookup[cardCost].type
+            manaCostLookup[cardCost].type = {}
+
         if card.type
             #Get only the first type, not subtypes (for now)
             cardType = card.type.split(' - ')[0]
-            if manaCostLookup[cardCost][cardType]
-                manaCostLookup[cardCost][cardType] += 1
+            if manaCostLookup[cardCost].type[cardType]
+                manaCostLookup[cardCost].type[cardType] += 1
             else
-                manaCostLookup[cardCost][cardType] = 1
+                manaCostLookup[cardCost].type[cardType] = 1
 
         #Do it for each color
         #--------------------------------
@@ -254,22 +261,58 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 curManaCost = curManaCost
             else
                 #Colorless spell (PROBABLY, need to check)
-                curManaCost = 'colorless'
+                curManaCost = 'X'
 
-            #Add to dict
-            if manaCostLookup[cardCost][curManaCost]
-                manaCostLookup[cardCost][curManaCost] += 1
+            #Make sure the color object exists
+            if !manaCostLookup[cardCost].color
+                manaCostLookup[cardCost].color = {}
+
+            #Add mana key and count to lookup dict
+            #   e.g., "G": 1
+            if manaCostLookup[cardCost].color[curManaCost]
+                manaCostLookup[cardCost].color[curManaCost] += 1
             else
-                manaCostLookup[cardCost][curManaCost] = 1
+                manaCostLookup[cardCost].color[curManaCost] = 1
 
-    console.log('MANA', manaCostLookup)
+    #------------------------------------
+    #Turn manaCostLookup into an array
+    #------------------------------------
+    manaCostLookupArray = []
+    for key, val of manaCostLookup
+        manaCostLookupArray.push(
+            val
+        )
 
-    #Add one to whatever the max mana cost was
-    maxManaCost += 1
+    #Get mapping for the stack layout
+    colorStackedData = d3.layout.stack()([ 'B','G','R','W','U','X' ].map((color)=>
+        #Use .map to setup the array
+        map = manaCostLookupArray.map((d)=>
+            #Make default value 0
+            yValue = 0
+
+            #Get the yValue from the color dict.  If it doesn't exist, it's 0
+            #   (from above)
+            if d.color and d.color[color]
+                yValue = d.color[color]
+
+            #Get the xValue (the cost)
+            xValue = d.cost || -1
+
+            #Return the dict containing an X and Y
+            return {
+                x: xValue
+                y: yValue
+                color: color
+            }
+        )
+        return map
+    ))
 
     #------------------------------------
     #Setup the data object used by the bars
     #------------------------------------
+    #Add one to whatever the max mana cost was
+    maxManaCost += 1
     #turn manaCostLookup into array
     manaCostArray = []
     mostNumOfCards = 0
@@ -285,25 +328,6 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 mostNumOfCards = value.total
 
     #------------------------------------
-    #More robust object...
-    curveDataByColor = []
-    for cost, num of manaCostLookup
-        if cost? and parseInt(cost)
-            #Push the total cost and amount
-            curveDataByColor.push([
-                cost,
-                #Black
-                #Blue
-                #Green
-                #Red
-                #White
-            ])
-            if num > mostNumOfCards
-                mostNumOfCards = num
-    console.log(curveDataByColor)
-
-
-    #------------------------------------
     #Final config
     #------------------------------------
     #Highest number mana will go to
@@ -315,15 +339,33 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Setup scale
     #------------------------------------
     #Create a bar chart for mana curve
+    '''
     xScale = d3.scale.linear()
         #Goes from 0 to the highest mana cost
+        .rangeRound([padding[3], width])
         .domain([0, maxManaCost])
-        .range([padding[3], width])
 
     yScale = d3.scale.linear()
         #Goes from 0 to the highest occurence of cards with that mana cost
-        .domain([0, highestCardCount])
         .rangeRound([padding[0], height])
+        .domain([0, highestCardCount])
+    '''
+
+    #------------------------------------
+    #SCALES - Group by color
+    #Setup x and y scales
+    #------------------------------------
+    xScale = d3.scale.linear()
+        #Use rangeRound since we want exact integers
+        .rangeRound([padding[3], width])
+        .domain([0, maxManaCost])
+
+    yScale = d3.scale.linear()
+        #Use rangeRound since we want exact integers
+        .rangeRound([padding[0], height])
+        .domain([0, d3.max(colorStackedData[colorStackedData.length - 1], (d)=>
+            return d.y0 + d.y
+        )])
 
     #------------------------------------
     #Setup Mana bars
@@ -334,12 +376,60 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Space between each bar
     barSpacingFactor = 1.5
 
-    manaBars = barsGroup
-        .selectAll("rect")
-        .data(manaCostArray)
+    #Setup manaBar group
+    colorGroup = barsGroup
+        .selectAll("g.color")
+        .data(colorStackedData)
+        .enter()
+        .append('svg:g')
+        .attr('class', 'color')
 
-    console.log(manaCostArray)
+    #Create selection for rects which represent each bar
+    manaBars = colorGroup.selectAll('rect.cardBar')
+        .data((d) =>
+            return d
+        )
 
+    #Add each element
+    manaBars.enter()
+        .append('svg:rect')
+            .attr("x", (d) =>
+                return xScale(d.x)
+            )
+            .attr("y", height)
+            .attr("height", 0)
+            .attr('class', 'cardBar')
+            .attr("width", width/(maxManaCost + barSpacingFactor))
+
+    #Exit elements / cleanup
+    manaBars.exit()
+        .transition()
+        .duration(300)
+        .ease('circle')
+            #Fade the items down
+            .attr('y', height)
+            .attr('height', 0)
+            .remove()
+
+    #Update each bar position
+    manaBars.transition()
+        .duration(250)
+        .ease("quad")
+            .attr("x", (d) =>
+                return xScale(d.x)
+            ).attr("y", (d) =>
+                return (height - yScale(d.y0)) - yScale(d.y) + padding[0]
+            ).attr("height", (d)=>
+                return yScale(d.y)
+            ).attr("width", width/(maxManaCost + barSpacingFactor) )
+            .style('fill', (d)=>
+                return DECKVIZ.util.colorScale[d.color]
+            )
+            .style('stroke', '#343434')
+            .style('stroke-width', '1')
+            .style('stroke-opacity', .7)
+            
+    '''
     #Enter each data element
     manaBars.enter()
         #Add a rect for each item
@@ -389,7 +479,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             .attr("height", (d,i)=>
                 return yScale(d[1]) - .5
             )
-
+    '''
     #------------------------------------
     #Labels for num of cards
     #------------------------------------
@@ -467,12 +557,12 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         .style("stroke", "#000")
 
     #------------------------------------
-    #left y axis
+    #y axis (on left side)
     #------------------------------------
-    tickYScale= d3.scale.linear()
+    tickYScale = d3.scale.linear()
         #Goes from 0 to the highest occurence of cards with that mana cost
         .domain([highestCardCount,0])
-        .rangeRound([padding[0], height])
+        .range([padding[0], height])
 
     yAxis = d3.svg.axis()
         .scale(tickYScale)
@@ -480,7 +570,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         .orient("left")
 
     yAxisGroup = svgEl.append("g")
-        .attr("transform", "translate(" + [padding[3], 0] + ")")
+        .attr("transform", "translate(" + [padding[3], -padding[0]] + ")")
         .classed("yaxis", true)
         .call(yAxis)
     yAxisGroup.selectAll("path")

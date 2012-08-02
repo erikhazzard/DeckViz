@@ -93,7 +93,7 @@ DECKVIZ.Deck.create = function(deck) {
 };
 
 DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, cost, curManaCost, curveDataByColor, height, highestCardCount, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorGroup, colorStackedData, cost, curManaCost, height, highestCardCount, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
   svgEl = d3.select('#svg-el-deck-mana');
   width = svgEl.attr('width');
   height = svgEl.attr('height');
@@ -112,12 +112,14 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
       manaCostLookup[cardCost].total = 1;
       if (cardCost > maxManaCost) maxManaCost = cardCost;
     }
+    manaCostLookup[cardCost].cost = cardCost;
+    if (!manaCostLookup[cardCost].type) manaCostLookup[cardCost].type = {};
     if (card.type) {
       cardType = card.type.split(' - ')[0];
-      if (manaCostLookup[cardCost][cardType]) {
-        manaCostLookup[cardCost][cardType] += 1;
+      if (manaCostLookup[cardCost].type[cardType]) {
+        manaCostLookup[cardCost].type[cardType] += 1;
       } else {
-        manaCostLookup[cardCost][cardType] = 1;
+        manaCostLookup[cardCost].type[cardType] = 1;
       }
     }
     curManaCost = card.manacost;
@@ -127,16 +129,36 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
       if (curManaCost.length > 0) {
         curManaCost = curManaCost;
       } else {
-        curManaCost = 'colorless';
+        curManaCost = 'COLORLESS';
       }
-      if (manaCostLookup[cardCost][curManaCost]) {
-        manaCostLookup[cardCost][curManaCost] += 1;
+      if (!manaCostLookup[cardCost].color) manaCostLookup[cardCost].color = {};
+      if (manaCostLookup[cardCost].color[curManaCost]) {
+        manaCostLookup[cardCost].color[curManaCost] += 1;
       } else {
-        manaCostLookup[cardCost][curManaCost] = 1;
+        manaCostLookup[cardCost].color[curManaCost] = 1;
       }
     }
   }
-  console.log('MANA', manaCostLookup);
+  manaCostLookupArray = [];
+  for (key in manaCostLookup) {
+    val = manaCostLookup[key];
+    manaCostLookupArray.push(val);
+  }
+  colorStackedData = d3.layout.stack()(['B', 'G', 'R', 'W', 'U', 'COLORLESS'].map(function(color) {
+    var map;
+    map = manaCostLookupArray.map(function(d) {
+      var xValue, yValue;
+      yValue = 0;
+      if (d.color && d.color[color]) yValue = d.color[color];
+      xValue = d.cost || -1;
+      return {
+        x: xValue,
+        y: yValue,
+        color: color
+      };
+    });
+    return map;
+  }));
   maxManaCost += 1;
   manaCostArray = [];
   mostNumOfCards = 0;
@@ -147,44 +169,33 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
       if (value.total > mostNumOfCards) mostNumOfCards = value.total;
     }
   }
-  curveDataByColor = [];
-  for (cost in manaCostLookup) {
-    num = manaCostLookup[cost];
-    if ((cost != null) && parseInt(cost)) {
-      curveDataByColor.push([cost]);
-      if (num > mostNumOfCards) mostNumOfCards = num;
-    }
-  }
-  console.log(curveDataByColor);
   highestCardCount = 20;
   if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
-  xScale = d3.scale.linear().domain([0, maxManaCost]).range([padding[3], width]);
-  yScale = d3.scale.linear().domain([0, highestCardCount]).rangeRound([padding[0], height]);
+  'xScale = d3.scale.linear()\n    #Goes from 0 to the highest mana cost\n    .rangeRound([padding[3], width])\n    .domain([0, maxManaCost])\n\nyScale = d3.scale.linear()\n    #Goes from 0 to the highest occurence of cards with that mana cost\n    .rangeRound([padding[0], height])\n    .domain([0, highestCardCount])';
+  xScale = d3.scale.linear().rangeRound([padding[3], width]).domain([0, maxManaCost]);
+  yScale = d3.scale.linear().rangeRound([padding[0], height]).domain([
+    0, d3.max(colorStackedData[colorStackedData.length - 1], function(d) {
+      return d.y0 + d.y;
+    })
+  ]);
   barsGroup = d3.select('#manaCurve');
   barSpacingFactor = 1.5;
-  manaBars = barsGroup.selectAll("rect").data(manaCostArray);
-  console.log(manaCostArray);
-  manaBars.enter().append("rect").style("fill", '#ffffff').attr("x", function(d, i) {
-    return xScale(d[0]) - .5;
-  }).attr("width", function(d, i) {
-    return width / (maxManaCost + barSpacingFactor);
-  }).attr('height', function(d) {
-    return 0;
-  }).attr('y', function(d) {
-    return height;
-  });
+  colorGroup = barsGroup.selectAll("g.color").data(colorStackedData).enter().append('svg:g').attr('class', 'color');
+  manaBars = colorGroup.selectAll('rect').data(Object);
+  manaBars.enter().append('svg:rect').attr("x", function(d) {
+    return xScale(d.x);
+  }).attr("y", height).attr("height", 0).attr("width", width / (maxManaCost + barSpacingFactor));
   manaBars.exit().transition().duration(300).ease('circle').attr('y', height).attr('height', 0).remove();
-  manaBars.transition().duration(250).ease("quad").style("fill", function(d, i) {
-    return DECKVIZ.util.colorScale['X'];
-  }).attr("width", function(d, i) {
-    return width / (maxManaCost + barSpacingFactor);
-  }).attr('y', function(d, i) {
-    return height - yScale(d[1]) - .5;
-  }).attr('x', function(d, i) {
-    return xScale(d[0]) - .5;
-  }).attr("height", function(d, i) {
-    return yScale(d[1]) - .5;
+  manaBars.transition().duration(250).ease("quad").attr("x", function(d) {
+    return xScale(d.x);
+  }).attr("y", function(d) {
+    return (height - yScale(d.y0)) - yScale(d.y) + padding[0];
+  }).attr("height", function(d) {
+    return yScale(d.y);
+  }).attr("width", width / (maxManaCost + barSpacingFactor)).style('fill', function(d) {
+    return console.log(d);
   });
+  '#Enter each data element\nmanaBars.enter()\n    #Add a rect for each item\n    .append("rect")\n    .style("fill", \'#ffffff\')\n    .attr("x", (d, i) =>\n        #return 0\n        return xScale(d[0]) - .5\n    )\n    .attr("width", (d,i)=>\n        #return 0\n        return width/(maxManaCost + barSpacingFactor )\n    )\n    .attr(\'height\', (d)=>\n        return 0\n    )\n    .attr(\'y\', (d)=>\n        return height\n    )\n\n#Exit items / cleanup\nmanaBars.exit()\n    .transition()\n    .duration(300)\n    .ease(\'circle\')\n        #Fade the items down\n        .attr(\'y\', height)\n        .attr(\'height\', 0)\n        .remove()\n\n#Update each bar width / height\nmanaBars.transition()\n    .duration(250)\n    .ease("quad")\n    .style("fill", (d,i) =>\n        return DECKVIZ.util.colorScale[\'X\']\n    )\n        .attr("width", (d,i)=>\n            return width/(maxManaCost + barSpacingFactor )\n        )\n        .attr(\'y\', (d,i)=>\n            return height - yScale(d[1]) - .5\n        )\n        .attr(\'x\', (d,i)=>\n            return xScale(d[0]) - .5\n        )\n        .attr("height", (d,i)=>\n            return yScale(d[1]) - .5\n        )';
   manaBarsNumLabel = barsGroup.selectAll("text").data(manaCostArray);
   manaBarsNumLabel.enter().append("text").style("fill", '#000000').style('text-shadow', '0 0 1px #ffffff').style('opacity', .3).attr("x", function(d, i) {
     return (xScale(d[0]) - 5) + ((width / (maxManaCost + barSpacingFactor)) / 2);
@@ -214,9 +225,9 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     return d;
   });
   svgEl.append("line").attr("x1", padding[3]).attr("x2", width).attr("y1", height - .5).attr("y2", height - .5).style("stroke", "#000");
-  tickYScale = d3.scale.linear().domain([highestCardCount, 0]).rangeRound([padding[0], height]);
+  tickYScale = d3.scale.linear().domain([highestCardCount, 0]).range([padding[0], height]);
   yAxis = d3.svg.axis().scale(tickYScale).ticks(9).orient("left");
-  yAxisGroup = svgEl.append("g").attr("transform", "translate(" + [padding[3], 0] + ")").classed("yaxis", true).call(yAxis);
+  yAxisGroup = svgEl.append("g").attr("transform", "translate(" + [padding[3], -padding[0]] + ")").classed("yaxis", true).call(yAxis);
   yAxisGroup.selectAll("path").style("fill", "none").style("stroke", "#000");
   yAxisGroup.selectAll("line").style("fill", "none").style("stroke", "#000");
   return true;
