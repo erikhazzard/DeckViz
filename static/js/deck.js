@@ -94,7 +94,7 @@
   };
 
   DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-    var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorGroup, colorStackedData, cost, curManaCost, height, highestCardCount, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+    var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorGroup, colorStackedData, cost, curManaCost, height, highestCardCount, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
     svgEl = d3.select('#svg-el-deck-mana');
     width = svgEl.attr('width');
     height = svgEl.attr('height');
@@ -171,10 +171,9 @@
       }
     }
     highestCardCount = 20;
-    if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
-    'xScale = d3.scale.linear()\n    #Goes from 0 to the highest mana cost\n    .rangeRound([padding[3], width])\n    .domain([0, maxManaCost])\n\nyScale = d3.scale.linear()\n    #Goes from 0 to the highest occurence of cards with that mana cost\n    .rangeRound([padding[0], height])\n    .domain([0, highestCardCount])';
+    if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.15;
     xScale = d3.scale.linear().rangeRound([padding[3], width]).domain([0, maxManaCost]);
-    yScale = d3.scale.linear().rangeRound([padding[0], height]).domain([0, highestCardCount]);
+    yScale = d3.scale.linear().rangeRound([0, height]).domain([0, highestCardCount]);
     barsGroup = d3.select('#manaCurve');
     barSpacingFactor = 1.5;
     colorGroup = barsGroup.selectAll("g.color").data(colorStackedData);
@@ -189,7 +188,7 @@
     manaBars.transition().duration(250).ease("quad").attr("x", function(d) {
       return xScale(d.x);
     }).attr("y", function(d) {
-      return (height - yScale(d.y0)) - yScale(d.y) + padding[0];
+      return (height - yScale(d.y0)) - yScale(d.y);
     }).attr("height", function(d) {
       if (d.y < 1) {
         return 0;
@@ -217,9 +216,9 @@
     $(svgEl.node()).empty();
     svgEl = svgEl.append('g').attr('class', 'axesGroup');
     svgEl.selectAll("text.label").data((function() {
-      var _results;
+      var _ref, _results;
       _results = [];
-      for (num = 0; 0 <= maxManaCost ? num <= maxManaCost : num >= maxManaCost; 0 <= maxManaCost ? num++ : num--) {
+      for (num = 0, _ref = maxManaCost - 1; 0 <= _ref ? num <= _ref : num >= _ref; 0 <= _ref ? num++ : num--) {
         _results.push(num);
       }
       return _results;
@@ -229,11 +228,15 @@
       return d;
     });
     svgEl.append("line").attr("x1", padding[3]).attr("x2", width).attr("y1", height - .5).attr("y2", height - .5).style("stroke", "#000");
-    tickYScale = d3.scale.linear().domain([highestCardCount, 0]).range([padding[0], height]);
+    tickYScale = d3.scale.linear().domain([highestCardCount, 0]).range([0, height]);
     yAxis = d3.svg.axis().scale(tickYScale).ticks(9).orient("left");
     yAxisGroup = svgEl.append("g").attr("transform", "translate(" + [padding[3], 0] + ")").classed("yaxis", true).call(yAxis);
     yAxisGroup.selectAll("path").style("fill", "none").style("stroke", "#000");
     yAxisGroup.selectAll("line").style("fill", "none").style("stroke", "#000");
+    manaCurveVizWrapper = d3.select('#manaCurveViz');
+    if (!manaCurveVizWrapper.attr('transform')) {
+      manaCurveVizWrapper.attr('transform', 'translate(0,30)');
+    }
     return true;
   };
 

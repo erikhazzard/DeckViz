@@ -333,23 +333,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Highest number mana will go to
     highestCardCount = 20
     if mostNumOfCards > 20
-        highestCardCount = mostNumOfCards * 1.2
-
-    #------------------------------------
-    #Setup scale
-    #------------------------------------
-    #Create a bar chart for mana curve
-    '''
-    xScale = d3.scale.linear()
-        #Goes from 0 to the highest mana cost
-        .rangeRound([padding[3], width])
-        .domain([0, maxManaCost])
-
-    yScale = d3.scale.linear()
-        #Goes from 0 to the highest occurence of cards with that mana cost
-        .rangeRound([padding[0], height])
-        .domain([0, highestCardCount])
-    '''
+        highestCardCount = mostNumOfCards * 1.15
 
     #------------------------------------
     #SCALES - Group by color
@@ -362,7 +346,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
 
     yScale = d3.scale.linear()
         #Use rangeRound since we want exact integers
-        .rangeRound([padding[0], height])
+        .rangeRound([0, height])
         .domain([0, highestCardCount])
             
     #d3.max(colorStackedData[colorStackedData.length - 1], (d)=>
@@ -420,7 +404,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             .attr("x", (d) =>
                 return xScale(d.x)
             ).attr("y", (d) =>
-                return (height - yScale(d.y0)) - yScale(d.y) + padding[0]
+                return (height - yScale(d.y0)) - yScale(d.y)
             ).attr("height", (d)=>
                 #Don't give it a height if d.y is 0
                 #   which means there are no cards for that color
@@ -484,7 +468,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         )
 
     #------------------------------------
-    #Add bottom labels
+    #Add bottom labels for mana cost
     #------------------------------------
     svgEl = d3.select('#axesLabels')
     #Clear out existing labels / axes
@@ -494,7 +478,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         .attr('class', 'axesGroup')
 
     svgEl.selectAll("text.label")
-        .data(num for num in [0..maxManaCost])
+        .data(num for num in [0..maxManaCost-1])
         .enter()
         .append('svg:text')
             .attr('class', 'label')
@@ -519,9 +503,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #y axis (on left side)
     #------------------------------------
     tickYScale = d3.scale.linear()
-        #Goes from 0 to the highest occurence of cards with that mana cost
+        #Goes from highest occurence of cards with that mana cost to 0
         .domain([highestCardCount,0])
-        .range([padding[0], height])
+        .range([0, height])
 
     yAxis = d3.svg.axis()
         .scale(tickYScale)
@@ -538,6 +522,13 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     yAxisGroup.selectAll("line")
         .style("fill", "none")
         .style("stroke", "#000")
+
+    #------------------------------------
+    #Move the graph down a bit so things aren't cut off
+    #------------------------------------
+    manaCurveVizWrapper = d3.select('#manaCurveViz')
+    if not manaCurveVizWrapper.attr('transform')
+        manaCurveVizWrapper.attr('transform', 'translate(0,30)')
 
     return true
 

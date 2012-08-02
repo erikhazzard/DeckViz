@@ -93,13 +93,13 @@ DECKVIZ.Deck.create = function(deck) {
 };
 
 DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorGroup, colorStackedData, cost, curManaCost, height, highestCardCount, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorGroup, colorStackedData, cost, curManaCost, height, highestCardCount, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
   svgEl = d3.select('#svg-el-deck-mana');
   width = svgEl.attr('width');
   height = svgEl.attr('height');
   height = height - 100;
   maxManaCost = 7;
-  padding = [10, 0, 0, 50];
+  padding = [0, 0, 0, 50];
   calcCC = DECKVIZ.util.calculateCardManaCost;
   manaCostLookup = {};
   for (_i = 0, _len = deck.length; _i < _len; _i++) {
@@ -129,7 +129,7 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
       if (curManaCost.length > 0) {
         curManaCost = curManaCost;
       } else {
-        curManaCost = 'COLORLESS';
+        curManaCost = 'X';
       }
       if (!manaCostLookup[cardCost].color) manaCostLookup[cardCost].color = {};
       if (manaCostLookup[cardCost].color[curManaCost]) {
@@ -144,7 +144,7 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     val = manaCostLookup[key];
     manaCostLookupArray.push(val);
   }
-  colorStackedData = d3.layout.stack()(['B', 'G', 'R', 'W', 'U', 'COLORLESS'].map(function(color) {
+  colorStackedData = d3.layout.stack()(['B', 'G', 'R', 'W', 'U', 'X'].map(function(color) {
     var map;
     map = manaCostLookupArray.map(function(d) {
       var xValue, yValue;
@@ -170,32 +170,33 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     }
   }
   highestCardCount = 20;
-  if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.2;
-  'xScale = d3.scale.linear()\n    #Goes from 0 to the highest mana cost\n    .rangeRound([padding[3], width])\n    .domain([0, maxManaCost])\n\nyScale = d3.scale.linear()\n    #Goes from 0 to the highest occurence of cards with that mana cost\n    .rangeRound([padding[0], height])\n    .domain([0, highestCardCount])';
+  if (mostNumOfCards > 20) highestCardCount = mostNumOfCards * 1.15;
   xScale = d3.scale.linear().rangeRound([padding[3], width]).domain([0, maxManaCost]);
-  yScale = d3.scale.linear().rangeRound([padding[0], height]).domain([
-    0, d3.max(colorStackedData[colorStackedData.length - 1], function(d) {
-      return d.y0 + d.y;
-    })
-  ]);
+  yScale = d3.scale.linear().rangeRound([0, height]).domain([0, highestCardCount]);
   barsGroup = d3.select('#manaCurve');
   barSpacingFactor = 1.5;
-  colorGroup = barsGroup.selectAll("g.color").data(colorStackedData).enter().append('svg:g').attr('class', 'color');
-  manaBars = colorGroup.selectAll('rect').data(Object);
+  colorGroup = barsGroup.selectAll("g.color").data(colorStackedData);
+  colorGroup.enter().append('svg:g').attr('class', 'color');
+  manaBars = colorGroup.selectAll('rect.cardBar').data(function(d) {
+    return d;
+  });
   manaBars.enter().append('svg:rect').attr("x", function(d) {
     return xScale(d.x);
-  }).attr("y", height).attr("height", 0).attr("width", width / (maxManaCost + barSpacingFactor));
+  }).attr("y", height).attr("height", 0).attr('class', 'cardBar').attr("width", width / (maxManaCost + barSpacingFactor));
   manaBars.exit().transition().duration(300).ease('circle').attr('y', height).attr('height', 0).remove();
   manaBars.transition().duration(250).ease("quad").attr("x", function(d) {
     return xScale(d.x);
   }).attr("y", function(d) {
-    return (height - yScale(d.y0)) - yScale(d.y) + padding[0];
+    return (height - yScale(d.y0)) - yScale(d.y);
   }).attr("height", function(d) {
-    return yScale(d.y);
+    if (d.y < 1) {
+      return 0;
+    } else {
+      return yScale(d.y);
+    }
   }).attr("width", width / (maxManaCost + barSpacingFactor)).style('fill', function(d) {
-    return console.log(d);
-  });
-  '#Enter each data element\nmanaBars.enter()\n    #Add a rect for each item\n    .append("rect")\n    .style("fill", \'#ffffff\')\n    .attr("x", (d, i) =>\n        #return 0\n        return xScale(d[0]) - .5\n    )\n    .attr("width", (d,i)=>\n        #return 0\n        return width/(maxManaCost + barSpacingFactor )\n    )\n    .attr(\'height\', (d)=>\n        return 0\n    )\n    .attr(\'y\', (d)=>\n        return height\n    )\n\n#Exit items / cleanup\nmanaBars.exit()\n    .transition()\n    .duration(300)\n    .ease(\'circle\')\n        #Fade the items down\n        .attr(\'y\', height)\n        .attr(\'height\', 0)\n        .remove()\n\n#Update each bar width / height\nmanaBars.transition()\n    .duration(250)\n    .ease("quad")\n    .style("fill", (d,i) =>\n        return DECKVIZ.util.colorScale[\'X\']\n    )\n        .attr("width", (d,i)=>\n            return width/(maxManaCost + barSpacingFactor )\n        )\n        .attr(\'y\', (d,i)=>\n            return height - yScale(d[1]) - .5\n        )\n        .attr(\'x\', (d,i)=>\n            return xScale(d[0]) - .5\n        )\n        .attr("height", (d,i)=>\n            return yScale(d[1]) - .5\n        )';
+    return DECKVIZ.util.colorScale[d.color];
+  }).style('stroke', '#343434').style('stroke-width', '1').style('stroke-opacity', .7);
   manaBarsNumLabel = barsGroup.selectAll("text").data(manaCostArray);
   manaBarsNumLabel.enter().append("text").style("fill", '#000000').style('text-shadow', '0 0 1px #ffffff').style('opacity', .3).attr("x", function(d, i) {
     return (xScale(d[0]) - 5) + ((width / (maxManaCost + barSpacingFactor)) / 2);
@@ -212,10 +213,11 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
   });
   svgEl = d3.select('#axesLabels');
   $(svgEl.node()).empty();
+  svgEl = svgEl.append('g').attr('class', 'axesGroup');
   svgEl.selectAll("text.label").data((function() {
-    var _results;
+    var _ref, _results;
     _results = [];
-    for (num = 0; 0 <= maxManaCost ? num <= maxManaCost : num >= maxManaCost; 0 <= maxManaCost ? num++ : num--) {
+    for (num = 0, _ref = maxManaCost - 1; 0 <= _ref ? num <= _ref : num >= _ref; 0 <= _ref ? num++ : num--) {
       _results.push(num);
     }
     return _results;
@@ -225,11 +227,15 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     return d;
   });
   svgEl.append("line").attr("x1", padding[3]).attr("x2", width).attr("y1", height - .5).attr("y2", height - .5).style("stroke", "#000");
-  tickYScale = d3.scale.linear().domain([highestCardCount, 0]).range([padding[0], height]);
+  tickYScale = d3.scale.linear().domain([highestCardCount, 0]).range([0, height]);
   yAxis = d3.svg.axis().scale(tickYScale).ticks(9).orient("left");
-  yAxisGroup = svgEl.append("g").attr("transform", "translate(" + [padding[3], -padding[0]] + ")").classed("yaxis", true).call(yAxis);
+  yAxisGroup = svgEl.append("g").attr("transform", "translate(" + [padding[3], 0] + ")").classed("yaxis", true).call(yAxis);
   yAxisGroup.selectAll("path").style("fill", "none").style("stroke", "#000");
   yAxisGroup.selectAll("line").style("fill", "none").style("stroke", "#000");
+  manaCurveVizWrapper = d3.select('#manaCurveViz');
+  if (!manaCurveVizWrapper.attr('transform')) {
+    manaCurveVizWrapper.attr('transform', 'translate(0,30)');
+  }
   return true;
 };
 

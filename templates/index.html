@@ -35,10 +35,14 @@
         <!-- Right Side (visualizations) -->
         <div id='site-right-side-wrapper'>
             <div id='svg-wrapper' style='margin: 1em;'>
+                <!-- TODO - bootstrap this in code -->
                 <svg id='svg-el-deck-mana' width=1100 height=400>
-                    <g id='manaCurve'></g>
-                    <g id='axesLabels'></g>
+                    <g id='manaCurveViz'>
+                        <g id='manaCurve'></g>
+                        <g id='axesLabels'></g>
+                    </g>
                 </svg>
+
                 <svg id='svg-el-deck-pie' width=600 height=400></svg>
             </div>
         </div>
