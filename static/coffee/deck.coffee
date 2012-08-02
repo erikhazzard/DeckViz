@@ -192,7 +192,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
 
     #Padding for graph
     padding = [
-        10,
+        0,
         0,
         0,
         50]
@@ -363,9 +363,11 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     yScale = d3.scale.linear()
         #Use rangeRound since we want exact integers
         .rangeRound([padding[0], height])
-        .domain([0, d3.max(colorStackedData[colorStackedData.length - 1], (d)=>
-            return d.y0 + d.y
-        )])
+        .domain([0, highestCardCount])
+            
+    #d3.max(colorStackedData[colorStackedData.length - 1], (d)=>
+    #    return d.y0 + d.y
+    #)
 
     #------------------------------------
     #Setup Mana bars
@@ -380,7 +382,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     colorGroup = barsGroup
         .selectAll("g.color")
         .data(colorStackedData)
-        .enter()
+    colorGroup.enter()
         .append('svg:g')
         .attr('class', 'color')
 
@@ -420,7 +422,12 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             ).attr("y", (d) =>
                 return (height - yScale(d.y0)) - yScale(d.y) + padding[0]
             ).attr("height", (d)=>
-                return yScale(d.y)
+                #Don't give it a height if d.y is 0
+                #   which means there are no cards for that color
+                if d.y < 1
+                    return 0
+                else
+                    return yScale(d.y)
             ).attr("width", width/(maxManaCost + barSpacingFactor) )
             .style('fill', (d)=>
                 return DECKVIZ.util.colorScale[d.color]
@@ -428,58 +435,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             .style('stroke', '#343434')
             .style('stroke-width', '1')
             .style('stroke-opacity', .7)
-            
-    '''
-    #Enter each data element
-    manaBars.enter()
-        #Add a rect for each item
-        .append("rect")
-        .style("fill", '#ffffff')
-        .attr("x", (d, i) =>
-            #return 0
-            return xScale(d[0]) - .5
-        )
-        .attr("width", (d,i)=>
-            #return 0
-            return width/(maxManaCost + barSpacingFactor )
-        )
-        .attr('height', (d)=>
-            return 0
-        )
-        .attr('y', (d)=>
-            return height
-        )
 
-    #Exit items / cleanup
-    manaBars.exit()
-        .transition()
-        .duration(300)
-        .ease('circle')
-            #Fade the items down
-            .attr('y', height)
-            .attr('height', 0)
-            .remove()
-
-    #Update each bar width / height
-    manaBars.transition()
-        .duration(250)
-        .ease("quad")
-        .style("fill", (d,i) =>
-            return DECKVIZ.util.colorScale['X']
-        )
-            .attr("width", (d,i)=>
-                return width/(maxManaCost + barSpacingFactor )
-            )
-            .attr('y', (d,i)=>
-                return height - yScale(d[1]) - .5
-            )
-            .attr('x', (d,i)=>
-                return xScale(d[0]) - .5
-            )
-            .attr("height", (d,i)=>
-                return yScale(d[1]) - .5
-            )
-    '''
     #------------------------------------
     #Labels for num of cards
     #------------------------------------
@@ -534,6 +490,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Clear out existing labels / axes
     $(svgEl.node()).empty()
 
+    svgEl = svgEl.append('g')
+        .attr('class', 'axesGroup')
+
     svgEl.selectAll("text.label")
         .data(num for num in [0..maxManaCost])
         .enter()
@@ -570,7 +529,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         .orient("left")
 
     yAxisGroup = svgEl.append("g")
-        .attr("transform", "translate(" + [padding[3], -padding[0]] + ")")
+        .attr("transform", "translate(" + [padding[3], 0] + ")")
         .classed("yaxis", true)
         .call(yAxis)
     yAxisGroup.selectAll("path")

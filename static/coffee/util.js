@@ -16,9 +16,9 @@ DECKVIZ.util.calculateCardManaCost = function(cost) {
 
 DECKVIZ.util.colorScale = {
   R: '#E33939',
-  G: '#39E339',
-  B: '#0F0F0F',
-  U: '#4477DD',
-  W: '#FFFFE6',
-  X: '#707070'
+  G: '#78dd60',
+  B: '#404040',
+  U: '#5d9cdd',
+  W: '#fffacf',
+  X: '#aaaaaa'
 };
