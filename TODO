@@ -1,2 +1,20 @@
 -Fix cut off at top of chart
 -Piechart / Treemap visualization 
+
+-Horizontal Grid Lines (high priorirt)
+    -Black lines, semi transparent, make them appear ABOVE bars
+
+-No outline on bars
+-Design the chart like a magic card
+    -Make it similar to back of magic card
+
+-Mutlicolored Cards
+    -Horizontal gradient
+-Legend
+-Syntax Highlighting in Card list (low priority)
+
+-Black outline for bars to show shape better
+
+-Breakdown of card cost % to land %
+    -e.g., for each card of mana cost 5 multiply by 4, for 4 mana cost multiply
+        by 4, etc. - take sum of then compare it to % of land
