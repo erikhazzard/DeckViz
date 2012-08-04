@@ -50,7 +50,7 @@ $('#deck').on('keyup', function(e) {
   }), true);
 });
 
-$('#deck').val('2 Tamiyo, the Moon Sage\n3 Entreat the Angels\n4 Terminus\n4 Lingering Souls\n1 Isolated Chapel\n1 Spellskite\n3 Dismember\n4 Pristine Talisman\n1 White Sun\'s Zenith\n4 Seachrome Coast\n3 Gideon Jura\n2 Day of Judgment\n4 Glacial Fortress\n4 Drowned Catacomb\n3 Oblivion Ring\n4 Think Twice\n4 Ghost Quarter\n1 Swamp\n3 Island\n5 Plains');
+$('#deck').val('2 Pillar of Flame\n4 Huntmaster of the Fells\n2 Kessig Wolf Run\n1 Devil\'s Play\n1 Whipflare\n2 Green Sun\'s Zenith\n4 Sphere of the Suns\n3 Inkmoth Nexus\n4 Slagstorm\n1 Wurmcoil Engine\n2 Galvanic Blast\n4 Copperline Gorge\n4 Glimmerpost\n1 Inferno Titan\n4 Primeval Titan\n1 Acidic Slime\n4 Rootbound Crag\n3 Solemn Simulacrum\n4 Mountain\n5 Forest\n4 Rampant Growth\n1 Birds of Paradise');
 
 DECKVIZ.Deck.create = function(deck) {
   var cardName, deckCopy, deckText, finalDeck, num, url, urlArray;
@@ -93,8 +93,10 @@ DECKVIZ.Deck.create = function(deck) {
 };
 
 DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorCostArray, colorGroup, colorStackedData, colorlessCost, cost, curManaCost, height, highestCardCount, i, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, tmpCost, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len, _ref;
+  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorCostArray, colorGroup, colorStackedData, colorlessCost, cost, curManaCost, height, highestCardCount, i, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgDefs, svgEl, targetBars, tickYScale, tmpCost, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len, _ref;
   svgEl = d3.select('#svg-el-deck-mana');
+  $('#svg-defs').remove();
+  svgDefs = svgEl.append("svg:defs").attr('id', 'svg-defs');
   width = svgEl.attr('width');
   height = svgEl.attr('height');
   height = height - 100;
@@ -152,7 +154,17 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
   }
   colorCostArray = _.unique(colorCostArray);
   colorStackedData = d3.layout.stack()(colorCostArray.map(function(color) {
-    var map;
+    var c, curColors, gradient, map, _j, _len2;
+    gradient = svgDefs.append("svg:linearGradient").attr("id", "gradient-" + color);
+    curColors = color.split('(');
+    curColors = curColors[0].split('');
+    i = 0;
+    for (_j = 0, _len2 = curColors.length; _j < _len2; _j++) {
+      c = curColors[_j];
+      gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * i) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
+      gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * (i + 1) - 2) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
+      i++;
+    }
     map = manaCostLookupArray.map(function(d) {
       var xValue, yValue;
       yValue = 0;
@@ -192,7 +204,7 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     return xScale(d.x);
   }).attr("y", height).attr("height", 0).attr('class', 'cardBar').attr("width", width / (maxManaCost + barSpacingFactor));
   manaBars.exit().transition().duration(300).ease('circle').attr('y', height).attr('height', 0).remove();
-  manaBars.transition().duration(250).ease("quad").attr("x", function(d) {
+  targetBars = manaBars.transition().duration(250).ease("quad").attr("x", function(d) {
     return xScale(d.x);
   }).attr("y", function(d) {
     return (height - yScale(d.y0)) - yScale(d.y);
@@ -202,9 +214,11 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     } else {
       return yScale(d.y);
     }
-  }).attr("width", width / (maxManaCost + barSpacingFactor)).style('fill', function(d) {
-    return DECKVIZ.util.colorScale[d.color];
-  }).style('stroke', '#343434').style('stroke-width', '1').style('stroke-opacity', .7);
+  }).attr("width", width / (maxManaCost + barSpacingFactor));
+  targetBars.style('stroke', '#000000').style('stroke-width', '1').style('stroke-opacity', .7);
+  targetBars.style('fill', function(d) {
+    return 'url(#gradient-' + d.color + ')';
+  });
   manaBarsNumLabel = barsGroup.selectAll("text").data(manaCostArray);
   manaBarsNumLabel.enter().append("text").style("fill", '#000000').style('text-shadow', '0 0 1px #ffffff').style('opacity', .3).attr("x", function(d, i) {
     return (xScale(d[0]) - 5) + ((width / (maxManaCost + barSpacingFactor)) / 2);

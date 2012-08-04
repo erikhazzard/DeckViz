@@ -92,6 +92,7 @@ $('#deck').on('keyup', (e)=>
     )
 )
 
+#TODO: Load decks based on select list
 $('#deck').val('''
 2 Pillar of Flame
 4 Huntmaster of the Fells
@@ -181,7 +182,11 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Draws the mana curve graph
     #   Redraws the axises each call, and transitions between bars / bar heights
     svgEl = d3.select('#svg-el-deck-mana')
+    
+    #Add defs - remove if it exists
+    $('#svg-defs').remove()
     svgDefs = svgEl.append("svg:defs")
+        .attr('id', 'svg-defs')
 
     #get width and height
     width = svgEl.attr('width')
@@ -338,6 +343,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Get mapping for the stack layout
     #   Note: colorCostArray is an array of all colors and color combinations
     #   for this deck.
+    #TODO: figure out why this breaks when no cards
     colorStackedData = d3.layout.stack()(colorCostArray.map((color)=>
         #TODO: TEST THIS
 
@@ -352,11 +358,22 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         #Create a gradient stop point for each color
         curColors = curColors[0].split('')
 
+        i=0
         for c in curColors
+            #Beginning stop
             gradient.append("svg:stop")
-                .attr("offset", (100/curColors.length) + '%')
+                .attr("offset", ((100/curColors.length) * i) + '%')
                 .attr("stop-color", DECKVIZ.util.colorScale[c])
                 .attr("stop-opacity", 1)
+            #End stop (so we get a solid color, no fade
+            gradient.append("svg:stop")
+                #note - subtract 2 % from the stop so we get a smoother 
+                #   transition
+                .attr("offset", ((100/curColors.length) * (i+1) - 2) + '%')
+                .attr("stop-color", DECKVIZ.util.colorScale[c])
+                .attr("stop-opacity", 1)
+            #increment counter
+            i++
         
         #Use .map to setup the array
         map = manaCostLookupArray.map((d)=>

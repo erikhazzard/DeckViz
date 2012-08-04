@@ -96,7 +96,8 @@
   DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorCostArray, colorGroup, colorStackedData, colorlessCost, cost, curManaCost, height, highestCardCount, i, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgDefs, svgEl, targetBars, tickYScale, tmpCost, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len, _ref;
     svgEl = d3.select('#svg-el-deck-mana');
-    svgDefs = svgEl.append("svg:defs");
+    $('#svg-defs').remove();
+    svgDefs = svgEl.append("svg:defs").attr('id', 'svg-defs');
     width = svgEl.attr('width');
     height = svgEl.attr('height');
     height = height - 100;
@@ -158,9 +159,12 @@
       gradient = svgDefs.append("svg:linearGradient").attr("id", "gradient-" + color);
       curColors = color.split('(');
       curColors = curColors[0].split('');
+      i = 0;
       for (_j = 0, _len2 = curColors.length; _j < _len2; _j++) {
         c = curColors[_j];
-        gradient.append("svg:stop").attr("offset", (100 / curColors.length) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
+        gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * i) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
+        gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * (i + 1) - 2) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
+        i++;
       }
       map = manaCostLookupArray.map(function(d) {
         var xValue, yValue;
