@@ -93,7 +93,7 @@ DECKVIZ.Deck.create = function(deck) {
 };
 
 DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
-  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorGroup, colorStackedData, cost, curManaCost, height, highestCardCount, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len;
+  var barSpacingFactor, barsGroup, calcCC, card, cardCost, cardType, colorCostArray, colorGroup, colorStackedData, colorlessCost, cost, curManaCost, height, highestCardCount, i, key, manaBars, manaBarsNumLabel, manaCostArray, manaCostLookup, manaCostLookupArray, manaCurveVizWrapper, maxManaCost, mostNumOfCards, num, padding, svgEl, tickYScale, tmpCost, val, value, width, xScale, yAxis, yAxisGroup, yScale, _i, _len, _ref;
   svgEl = d3.select('#svg-el-deck-mana');
   width = svgEl.attr('width');
   height = svgEl.attr('height');
@@ -102,6 +102,7 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
   padding = [0, 0, 0, 50];
   calcCC = DECKVIZ.util.calculateCardManaCost;
   manaCostLookup = {};
+  colorCostArray = [];
   for (_i = 0, _len = deck.length; _i < _len; _i++) {
     card = deck[_i];
     cardCost = calcCC(card.manacost);
@@ -124,13 +125,17 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     }
     curManaCost = card.manacost;
     if (curManaCost) {
-      curManaCost = curManaCost.replace(/[^UWBRG]+/gi, '');
-      curManaCost = _.unique(curManaCost.split('')).join('');
-      if (curManaCost.length > 0) {
-        curManaCost = curManaCost;
-      } else {
-        curManaCost = 'X';
+      colorlessCost = parseInt(curManaCost, 10);
+      tmpCost = '';
+      if (colorlessCost > 0) {
+        for (i = 0, _ref = colorlessCost - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+          tmpCost += 'C';
+        }
       }
+      colorlessCost = tmpCost;
+      curManaCost = curManaCost.replace(/^[0-9]*/, '');
+      curManaCost = colorlessCost + curManaCost;
+      colorCostArray.push(curManaCost);
       if (!manaCostLookup[cardCost].color) manaCostLookup[cardCost].color = {};
       if (manaCostLookup[cardCost].color[curManaCost]) {
         manaCostLookup[cardCost].color[curManaCost] += 1;
@@ -138,13 +143,14 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
         manaCostLookup[cardCost].color[curManaCost] = 1;
       }
     }
+    'WORKING - Group by Color \nif curManaCost\n    #Get all the colors\n    curManaCost = curManaCost.replace(/[^UWBRG]+/gi,\'\')\n    #Get the unique values (e.g., "GG" to "G")\n    #   Also sort so we get "GR" instead of "RG"\n    curManaCost = _.unique(curManaCost.split(\'\').sort()).join(\'\')\n\n    if curManaCost.length > 0\n        #Colored spell (might be multicolored)\n        curManaCost = curManaCost\n    else\n        #Colorless spell (PROBABLY, need to check)\n        curManaCost = \'X\'\n\n    #Make sure the color object exists\n    if !manaCostLookup[cardCost].color\n        manaCostLookup[cardCost].color = {}\n\n    #Add mana key and count to lookup dict\n    #   e.g., "G": 1\n    if manaCostLookup[cardCost].color[curManaCost]\n        manaCostLookup[cardCost].color[curManaCost] += 1\n    else\n        manaCostLookup[cardCost].color[curManaCost] = 1';
   }
   manaCostLookupArray = [];
   for (key in manaCostLookup) {
     val = manaCostLookup[key];
     manaCostLookupArray.push(val);
   }
-  colorStackedData = d3.layout.stack()(['B', 'G', 'R', 'W', 'U', 'X'].map(function(color) {
+  colorStackedData = d3.layout.stack()(colorCostArray.map(function(color) {
     var map;
     map = manaCostLookupArray.map(function(d) {
       var xValue, yValue;
@@ -215,9 +221,9 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
   $(svgEl.node()).empty();
   svgEl = svgEl.append('g').attr('class', 'axesGroup');
   svgEl.selectAll("text.label").data((function() {
-    var _ref, _results;
+    var _ref2, _results;
     _results = [];
-    for (num = 0, _ref = maxManaCost - 1; 0 <= _ref ? num <= _ref : num >= _ref; 0 <= _ref ? num++ : num--) {
+    for (num = 0, _ref2 = maxManaCost - 1; 0 <= _ref2 ? num <= _ref2 : num >= _ref2; 0 <= _ref2 ? num++ : num--) {
       _results.push(num);
     }
     return _results;

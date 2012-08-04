@@ -24,4 +24,18 @@
     X: '#aaaaaa'
   };
 
+  DECKVIZ.util.colorArray = {};
+
+  DECKVIZ.util.createColorArray = function() {
+    var colorArray, startingColors;
+    startingColors = ['B', 'G', 'R', 'W', 'U', 'X'];
+    colorArray = _.clone(startingColors);
+    colorArray.push('BG', 'BR', 'BW', 'BU', 'GR', 'GW', 'GU', 'RW', 'RU', 'WU');
+    colorArray.push('BGR', 'BGW', 'BGU', 'BRW', 'BRU', 'GRW', 'GRU', 'GWU', 'RWU');
+    colorArray.push('BGRW', 'BGRU', 'GRWU', 'RWUB');
+    colorArray.push('BGRWU');
+    console.log(colorArray);
+    return colorArray;
+  };
+
 }).call(this);

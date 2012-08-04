@@ -204,6 +204,10 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Build a dict of mana costs: number of cards with that cost
     manaCostLookup = {}
 
+    #Keep track of all mana costs, which will be
+    #   shown as another dimension in each bar in the graph
+    colorCostArray = []
+
     #------------------------------------
     #Copy deck into new array / get null mana cost spells out
     #Setup the manaCostLookup object
@@ -250,11 +254,51 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         #--------------------------------
         #Card color is defined by the mana cost
         curManaCost = card.manacost
+
+        if curManaCost
+            #TODO: Turn this into function, test it, etc
+            
+            #Get the number of colorless mana
+            #   Replace it with C (e.g., (2) becomes CC)
+            colorlessCost = parseInt(curManaCost,10)
+            tmpCost = ''
+
+            #If there is a colorless cost, keep track of it
+            #   and set it up (e.g., CC)
+            if colorlessCost > 0
+                #Make sure to subtract 1 so we only loop N times
+                for i in [0..colorlessCost-1]
+                    tmpCost += 'C'
+
+            #Store the colorless cost
+            colorlessCost = tmpCost
+
+            #Remove the existing colorcolor cost (in numbers
+            curManaCost = curManaCost.replace(/^[0-9]*/,'')
+            #Prepend the color cost (as 'C...')
+            curManaCost = colorlessCost + curManaCost
+
+            #Add the current mana cost to the colorCostArray
+            colorCostArray.push(curManaCost)
+
+            #Make sure the color object exists
+            if !manaCostLookup[cardCost].color
+                manaCostLookup[cardCost].color = {}
+
+            #Add mana key and count to lookup dict
+            #   e.g., "G": 1
+            if manaCostLookup[cardCost].color[curManaCost]
+                manaCostLookup[cardCost].color[curManaCost] += 1
+            else
+                manaCostLookup[cardCost].color[curManaCost] = 1
+
+        '''WORKING - Group by Color 
         if curManaCost
             #Get all the colors
             curManaCost = curManaCost.replace(/[^UWBRG]+/gi,'')
             #Get the unique values (e.g., "GG" to "G")
-            curManaCost = _.unique(curManaCost.split('')).join('')
+            #   Also sort so we get "GR" instead of "RG"
+            curManaCost = _.unique(curManaCost.split('').sort()).join('')
 
             if curManaCost.length > 0
                 #Colored spell (might be multicolored)
@@ -273,6 +317,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 manaCostLookup[cardCost].color[curManaCost] += 1
             else
                 manaCostLookup[cardCost].color[curManaCost] = 1
+        '''
 
     #------------------------------------
     #Turn manaCostLookup into an array
@@ -283,8 +328,14 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             val
         )
 
+    #TODO: Create map of all possible color combos
+
     #Get mapping for the stack layout
-    colorStackedData = d3.layout.stack()([ 'B','G','R','W','U','X' ].map((color)=>
+    #   Note: colorCostArray is an array of all colors and color combinations
+    #   for this deck.
+    #
+    #   It is generated above
+    colorStackedData = d3.layout.stack()(colorCostArray.map((color)=>
         #Use .map to setup the array
         map = manaCostLookupArray.map((d)=>
             #Make default value 0
@@ -293,6 +344,8 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             #Get the yValue from the color dict.  If it doesn't exist, it's 0
             #   (from above)
             if d.color and d.color[color]
+                #Get the FIRST color, because we may have multicolors
+                #If we do, add it to multiColor
                 yValue = d.color[color]
 
             #Get the xValue (the cost)
@@ -348,10 +401,6 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         #Use rangeRound since we want exact integers
         .rangeRound([0, height])
         .domain([0, highestCardCount])
-            
-    #d3.max(colorStackedData[colorStackedData.length - 1], (d)=>
-    #    return d.y0 + d.y
-    #)
 
     #------------------------------------
     #Setup Mana bars

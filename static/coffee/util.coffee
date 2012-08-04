@@ -43,3 +43,47 @@ DECKVIZ.util.colorScale = {
     W: '#fffacf'
     X: '#aaaaaa'
 }
+
+#----------------------------------------
+#Setup all colors
+#----------------------------------------
+#Set when createColorArray is called (in init)
+DECKVIZ.util.colorArray = {}
+
+DECKVIZ.util.createColorArray = ()=>
+    #We want to keep track of every color combination, since each color combo
+    #   is a unique bar we want to show
+    startingColors = [ 'B','G','R','W','U','X']
+
+    #Create new array which we'll use to setup all the colors for
+    colorArray = _.clone(startingColors)
+
+    #Generate all colors
+    #   This should be done programatically
+    #Two colors
+    colorArray.push(
+        'BG', 'BR', 'BW', 'BU',
+        'GR', 'GW', 'GU',
+        'RW', 'RU',
+        'WU'
+    )
+
+    #Three colors
+    colorArray.push(
+        'BGR', 'BGW', 'BGU', 'BRW', 'BRU',
+        'GRW', 'GRU', 'GWU',
+        'RWU'
+    )
+
+    #Four colors
+    colorArray.push(
+        'BGRW', 'BGRU',
+        'GRWU',
+        'RWUB'
+    )
+
+    #All colors
+    colorArray.push('BGRWU')
+    console.log(colorArray)
+
+    return colorArray
