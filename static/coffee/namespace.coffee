@@ -45,11 +45,6 @@ window.DECKVIZ = DECKVIZ
 #
 # ===========================================================================
 DECKVIZ.init = ()=>
-    #Generate all possible color / color combinations
-    #   This will create the colorArray and setup the 
-    #   DECKVIZ.Deck.colorArray object
-    DECKVIZ.util.colorArray = DECKVIZ.util.createColorArray()
-
     #Create the mana curve
     DECKVIZ.Deck.create()
     return true

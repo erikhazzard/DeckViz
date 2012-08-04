@@ -150,6 +150,7 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
     val = manaCostLookup[key];
     manaCostLookupArray.push(val);
   }
+  colorCostArray = _.unique(colorCostArray);
   colorStackedData = d3.layout.stack()(colorCostArray.map(function(color) {
     var map;
     map = manaCostLookupArray.map(function(d) {
@@ -183,6 +184,7 @@ DECKVIZ.Deck.drawManaCurve = function(deck, originalDeck) {
   barSpacingFactor = 1.5;
   colorGroup = barsGroup.selectAll("g.color").data(colorStackedData);
   colorGroup.enter().append('svg:g').attr('class', 'color');
+  colorGroup.exit().remove();
   manaBars = colorGroup.selectAll('rect.cardBar').data(function(d) {
     return d;
   });

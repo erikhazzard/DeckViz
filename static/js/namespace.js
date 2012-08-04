@@ -32,7 +32,6 @@
   window.DECKVIZ = DECKVIZ;
 
   DECKVIZ.init = function() {
-    DECKVIZ.util.colorArray = DECKVIZ.util.createColorArray();
     DECKVIZ.Deck.create();
     return true;
   };

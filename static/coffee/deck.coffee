@@ -93,26 +93,28 @@ $('#deck').on('keyup', (e)=>
 )
 
 $('#deck').val('''
-    2 Tamiyo, the Moon Sage
-    3 Entreat the Angels
-    4 Terminus
-    4 Lingering Souls
-    1 Isolated Chapel
-    1 Spellskite
-    3 Dismember
-    4 Pristine Talisman
-    1 White Sun's Zenith
-    4 Seachrome Coast
-    3 Gideon Jura
-    2 Day of Judgment
-    4 Glacial Fortress
-    4 Drowned Catacomb
-    3 Oblivion Ring
-    4 Think Twice
-    4 Ghost Quarter
-    1 Swamp
-    3 Island
-    5 Plains
+2 Pillar of Flame
+4 Huntmaster of the Fells
+2 Kessig Wolf Run
+1 Devil's Play
+1 Whipflare
+2 Green Sun's Zenith
+4 Sphere of the Suns
+3 Inkmoth Nexus
+4 Slagstorm
+1 Wurmcoil Engine
+2 Galvanic Blast
+4 Copperline Gorge
+4 Glimmerpost
+1 Inferno Titan
+4 Primeval Titan
+1 Acidic Slime
+4 Rootbound Crag
+3 Solemn Simulacrum
+4 Mountain
+5 Forest
+4 Rampant Growth
+1 Birds of Paradise
 ''')
 
 DECKVIZ.Deck.create = (deck)=>
@@ -179,6 +181,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #Draws the mana curve graph
     #   Redraws the axises each call, and transitions between bars / bar heights
     svgEl = d3.select('#svg-el-deck-mana')
+    svgDefs = svgEl.append("svg:defs")
 
     #get width and height
     width = svgEl.attr('width')
@@ -328,14 +331,33 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             val
         )
 
-    #TODO: Create map of all possible color combos
+    #Get unique values from colorCostArray (e.g, we want like
+    #   ['GR', 'GGR'] but not ['GR', 'GR', 'GR', 'GGR', 'GGR']
+    colorCostArray = _.unique(colorCostArray)
 
     #Get mapping for the stack layout
     #   Note: colorCostArray is an array of all colors and color combinations
     #   for this deck.
-    #
-    #   It is generated above
     colorStackedData = d3.layout.stack()(colorCostArray.map((color)=>
+        #TODO: TEST THIS
+
+        #Setup up gradients - setup a gradient for each color
+        gradient= svgDefs.append("svg:linearGradient")
+            .attr("id", "gradient-" + color)
+
+        #TODO: get (X/P) (color OR life (or color))
+        #For now, we'll ignore the (X/P) and just do color combos
+        curColors = color.split('(')
+
+        #Create a gradient stop point for each color
+        curColors = curColors[0].split('')
+
+        for c in curColors
+            gradient.append("svg:stop")
+                .attr("offset", (100/curColors.length) + '%')
+                .attr("stop-color", DECKVIZ.util.colorScale[c])
+                .attr("stop-opacity", 1)
+        
         #Use .map to setup the array
         map = manaCostLookupArray.map((d)=>
             #Make default value 0
@@ -350,7 +372,7 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
 
             #Get the xValue (the cost)
             xValue = d.cost || -1
-
+            
             #Return the dict containing an X and Y
             return {
                 x: xValue
@@ -415,9 +437,15 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     colorGroup = barsGroup
         .selectAll("g.color")
         .data(colorStackedData)
+
+    #Create a group for each item
     colorGroup.enter()
         .append('svg:g')
         .attr('class', 'color')
+
+    #Remove groups we don't need
+    colorGroup.exit()
+        .remove()
 
     #Create selection for rects which represent each bar
     manaBars = colorGroup.selectAll('rect.cardBar')
@@ -447,7 +475,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             .remove()
 
     #Update each bar position
-    manaBars.transition()
+    #   Store a ref to all the transitioned states
+    #   so we can style them later
+    targetBars = manaBars.transition()
         .duration(250)
         .ease("quad")
             .attr("x", (d) =>
@@ -462,13 +492,15 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 else
                     return yScale(d.y)
             ).attr("width", width/(maxManaCost + barSpacingFactor) )
-            .style('fill', (d)=>
-                return DECKVIZ.util.colorScale[d.color]
-            )
-            .style('stroke', '#343434')
-            .style('stroke-width', '1')
-            .style('stroke-opacity', .7)
 
+    #Stlye the bars based on some properties
+    targetBars.style('stroke', '#000000')
+        .style('stroke-width', '1')
+        .style('stroke-opacity', .7)
+
+    targetBars.style('fill', (d)=>
+            return 'url(#gradient-' + d.color + ')'
+        )
     #------------------------------------
     #Labels for num of cards
     #------------------------------------
