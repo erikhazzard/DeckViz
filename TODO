@@ -18,3 +18,10 @@
 -Breakdown of card cost % to land %
     -e.g., for each card of mana cost 5 multiply by 4, for 4 mana cost multiply
         by 4, etc. - take sum of then compare it to % of land
+
+
+-Add another deck so decks can be compared
+
+-Draw tick marks for mana cost in bas
+
+*** - Add "by area" toggle function to make width of cost bars wider
