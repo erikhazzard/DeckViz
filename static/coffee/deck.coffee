@@ -216,6 +216,10 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
     #   shown as another dimension in each bar in the graph
     colorCostArray = []
 
+    #This option configures whether or not to scale the area based on
+    #   mana cost
+    scaleBarWidth = false
+
     #------------------------------------
     #Copy deck into new array / get null mana cost spells out
     #Setup the manaCostLookup object
@@ -299,33 +303,6 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 manaCostLookup[cardCost].color[curManaCost] += 1
             else
                 manaCostLookup[cardCost].color[curManaCost] = 1
-
-        '''WORKING - Group by Color 
-        if curManaCost
-            #Get all the colors
-            curManaCost = curManaCost.replace(/[^UWBRG]+/gi,'')
-            #Get the unique values (e.g., "GG" to "G")
-            #   Also sort so we get "GR" instead of "RG"
-            curManaCost = _.unique(curManaCost.split('').sort()).join('')
-
-            if curManaCost.length > 0
-                #Colored spell (might be multicolored)
-                curManaCost = curManaCost
-            else
-                #Colorless spell (PROBABLY, need to check)
-                curManaCost = 'X'
-
-            #Make sure the color object exists
-            if !manaCostLookup[cardCost].color
-                manaCostLookup[cardCost].color = {}
-
-            #Add mana key and count to lookup dict
-            #   e.g., "G": 1
-            if manaCostLookup[cardCost].color[curManaCost]
-                manaCostLookup[cardCost].color[curManaCost] += 1
-            else
-                manaCostLookup[cardCost].color[curManaCost] = 1
-        '''
 
     #------------------------------------
     #Turn manaCostLookup into an array
@@ -508,7 +485,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                     return 0
                 else
                     return yScale(d.y)
-            ).attr("width", width/(maxManaCost + barSpacingFactor) )
+            ).attr("width", (d)=>
+                return width/(maxManaCost + barSpacingFactor)
+            )
 
     #Stlye the bars based on some properties
     targetBars.style('stroke', '#000000')
@@ -605,21 +584,56 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
         .domain([highestCardCount,0])
         .range([0, height])
 
-    yAxis = d3.svg.axis()
+    #Create axis for ticks
+    yAxisTicks = d3.svg.axis()
         .scale(tickYScale)
-        .ticks(9)
+        .ticks(10)
         .orient("left")
+        #give it a tick size to make it go across the graph
+        .tickSize(-width)
 
+    #Create axis for lines that go across the graph
+    yAxisHorizontalLines = d3.svg.axis()
+        .scale(tickYScale)
+        #Make there always be ticks equal to the number of cards
+        .ticks(highestCardCount)
+        .orient("left")
+        #give it a tick size to make it go across the graph
+        .tickSize(-width)
+
+    #Add groups
     yAxisGroup = svgEl.append("g")
         .attr("transform", "translate(" + [padding[3], 0] + ")")
         .classed("yaxis", true)
-        .call(yAxis)
+        .call(yAxisTicks)
     yAxisGroup.selectAll("path")
         .style("fill", "none")
-        .style("stroke", "#000")
+        .style("stroke", "#000000")
     yAxisGroup.selectAll("line")
         .style("fill", "none")
-        .style("stroke", "#000")
+        .style("stroke", "#404040")
+        .style('stroke-width', 1)
+        #Note: the horizontal lines stack on each other, so we'll get
+        #   a slightly darker line for each of the ticks in this group
+        .style("opacity", .4)
+
+    #Shows a line at each tick mark across the graph
+    yAxisHorizontalLines = svgEl.append("g")
+        .attr("transform", "translate(" + [padding[3], 0] + ")")
+        .classed("yaxis", true)
+        .call(yAxisHorizontalLines)
+    yAxisHorizontalLines.selectAll("path")
+        .style("fill", "none")
+        .style("stroke", "#000000")
+    #Don't show text labels
+    yAxisHorizontalLines.selectAll("text")
+        .style("fill", "none")
+        .style("opacity", 0)
+    yAxisHorizontalLines.selectAll("line")
+        .style("fill", "none")
+        .style("stroke", "#404040")
+        .style('stroke-width', 1)
+        .style("opacity", .4)
 
     #------------------------------------
     #Move the graph down a bit so things aren't cut off
