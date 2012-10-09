@@ -163,7 +163,7 @@
       for (_j = 0, _len2 = curColors.length; _j < _len2; _j++) {
         c = curColors[_j];
         gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * i) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
-        gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * (i + 1) - 2) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
+        gradient.append("svg:stop").attr("offset", ((100 / curColors.length) * (i + 1) - 1) + '%').attr("stop-color", DECKVIZ.util.colorScale[c]).attr("stop-opacity", 1);
         i++;
       }
       map = manaCostLookupArray.map(function(d) {
@@ -218,9 +218,13 @@
     }).attr("width", function(d) {
       return width / (maxManaCost + barSpacingFactor);
     });
-    targetBars.style('stroke', '#000000').style('stroke-width', '1').style('stroke-opacity', .7);
-    targetBars.style('fill', function(d) {
-      return 'url(#gradient-' + d.color + ')';
+    targetBars.style({
+      'stroke': '#000000',
+      'stroke-width': '1',
+      'stroke-opacity': .7,
+      'fill': function(d) {
+        return 'url(#gradient-' + d.color + ')';
+      }
     });
     manaBarsNumLabel = barsGroup.selectAll("text").data(manaCostArray);
     manaBarsNumLabel.enter().append("text").style("fill", '#000000').style('text-shadow', '0 0 1px #ffffff').style('opacity', .3).attr("x", function(d, i) {

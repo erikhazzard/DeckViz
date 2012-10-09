@@ -3,6 +3,7 @@
 # deck.coffee
 #
 # Contains the view, model, and collection class definitions for the deck 
+# TODO: Colors for life - what color is Birthing Pod(?)
 #
 # ===========================================================================
 DECKVIZ.Deck.getDeckFromInput = (params) =>
@@ -344,9 +345,9 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
                 .attr("stop-opacity", 1)
             #End stop (so we get a solid color, no fade
             gradient.append("svg:stop")
-                #note - subtract 2 % from the stop so we get a smoother 
+                #note - subtract 1 % from the stop so we get a smoother 
                 #   transition
-                .attr("offset", ((100/curColors.length) * (i+1) - 2) + '%')
+                .attr("offset", ((100/curColors.length) * (i+1) - 1) + '%')
                 .attr("stop-color", DECKVIZ.util.colorScale[c])
                 .attr("stop-opacity", 1)
             #increment counter
@@ -490,13 +491,14 @@ DECKVIZ.Deck.drawManaCurve = (deck, originalDeck)=>
             )
 
     #Stlye the bars based on some properties
-    targetBars.style('stroke', '#000000')
-        .style('stroke-width', '1')
-        .style('stroke-opacity', .7)
-
-    targetBars.style('fill', (d)=>
+    targetBars.style({
+        'stroke': '#000000'
+        'stroke-width': '1'
+        'stroke-opacity': .7
+        #'filter': "url(#filter4066)"
+        'fill': (d)=>
             return 'url(#gradient-' + d.color + ')'
-        )
+    })
     #------------------------------------
     #Labels for num of cards
     #------------------------------------
