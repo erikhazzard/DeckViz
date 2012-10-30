@@ -28,7 +28,7 @@ Setup the local server (sets up virtualenv and flask and other dependencies)
 	-http://www.mongodb.org/downloads
 	(Any version greater than 2.0)
 
-* To update the card json file thhat is read into mongo, put a cockatrice generated cards.xml file in the server directory and the run 
+* To update the card json file that is read into mongo, put a cockatrice generated cards.xml file (~/Library/Application Support/Cockatrice/Cockatrice/cards.xml) in the server directory and the run 
     `python convert_cards_to_json.py`
     This generates a .json file which mongo will read in
 
